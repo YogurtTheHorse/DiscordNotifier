@@ -1,0 +1,1 @@
+Just a simple service for notifying about discord channel joins to Telegram
