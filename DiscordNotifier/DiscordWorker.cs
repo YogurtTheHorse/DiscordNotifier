@@ -54,9 +54,20 @@ public class DiscordWorker : BackgroundService
     {
         if (afterState.VoiceChannel is null) return;
 
+        var text = $"{user.Username} joined {afterState.VoiceChannel.Name}";
+
+        if (afterState.IsStreaming)
+        {
+            text = $"{user.Username} started streaming in voice channel {afterState.VoiceChannel.Name}";
+        }
+        else if (beforeState.IsStreaming)
+        {
+            text = $"{user.Username} stopped streaming";
+        }
+
         await _telegramBotClient.SendTextMessageAsync(
             _telegramOptions.Value.TargetId,
-            $"{user.Username} joined {afterState.VoiceChannel.Name}"
+            text
         );
     }
 }
