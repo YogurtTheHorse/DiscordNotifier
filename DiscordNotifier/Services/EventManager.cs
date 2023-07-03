@@ -40,17 +40,6 @@ public class EventManager
         await _channelsStateManager.UpdateChannelInfo(voiceChannel);
 
         var lastJoined = await _timingsManager.GetLastReportedJoinTime(user.Id);
-
-        if ((DateTime.Now - lastJoined).TotalSeconds > _waitOptions.Value.WaitBetweenJoins)
-        {
-            await _timingsManager.SetLastReportedJoinTime(user.Id, DateTime.Now);
-
-            await _telegramBotClient.SendTextMessageAsync(
-                ChatId,
-                $"<b>{user.Username}</b> joined <b>{voiceChannel.Name}</b>",
-                parseMode: ParseMode.Html
-            );
-        }
     }
 
     public async Task UserSwitchedChannel(SocketUser _, SocketVoiceChannel beforeChannel, SocketVoiceChannel afterChannel)
@@ -59,9 +48,11 @@ public class EventManager
         await _channelsStateManager.UpdateChannelInfo(afterChannel);
     }
 
-    public async Task UserStoppedStreaming(SocketUser _, SocketVoiceChannel voiceChannel)
+    public async Task UserStoppedStreaming(SocketUser user, SocketVoiceChannel voiceChannel)
     {
         await _channelsStateManager.UpdateChannelInfo(voiceChannel);
+        await _timingsManager.SetLastStreamingTime(user.Id, DateTime.Now);
+
     }
 
     public async Task UserStartedStreaming(SocketUser user, SocketVoiceChannel voiceChannel)

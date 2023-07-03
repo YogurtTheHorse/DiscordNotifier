@@ -11,6 +11,23 @@ public class MessagesDataStorage
         _redis = redis;
     }
 
+    public async Task SaveDeleteMessageJobId(ulong channelId, string jobId)
+    {
+        var db = _redis.GetDatabase();
+
+        await db.StringSetAsync($"job:delete-channel:{channelId}", jobId);
+    }
+
+    public async Task<string?> GetDeleteMessageJobId(ulong channelId)
+    {
+        var db = _redis.GetDatabase();
+        var res = await db.StringGetAsync($"job:delete-channel:{channelId}");
+
+        return res.HasValue
+            ? res.ToString()
+            : null;
+    }
+
     public async Task<int?> GetChannelStateMessage(ulong channelId)
     {
         var db = _redis.GetDatabase();
@@ -21,11 +38,10 @@ public class MessagesDataStorage
             : null;
     }
 
-    public async Task SetChannelStateMessage(ulong channelId, int messageId)
+    public async Task SetChannelStateMessage(ulong channelId, int? messageId)
     {
         var db = _redis.GetDatabase();
         
         await db.StringSetAsync($"msg:channel:{channelId}", messageId);
-        
     }
 }

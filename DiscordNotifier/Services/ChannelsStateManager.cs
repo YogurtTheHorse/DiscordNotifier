@@ -1,7 +1,9 @@
 using Discord.WebSocket;
 using DiscordNotifier.Options;
+using Hangfire;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types.Enums;
 
 namespace DiscordNotifier.Services;
@@ -10,6 +12,8 @@ public class ChannelsStateManager
 {
     private readonly ITelegramBotClient _botClient;
     private readonly IOptions<TelegramOptions> _telegramOptions;
+    private readonly IOptions<WaitOptions> _waitOptions;
+    private readonly IBackgroundJobClient _jobs;
     private readonly MessagesDataStorage _messagesDataStorage;
 
     private long ChatId => _telegramOptions.Value.TargetId;
@@ -17,26 +21,35 @@ public class ChannelsStateManager
     public ChannelsStateManager(
         ITelegramBotClient botClient,
         IOptions<TelegramOptions> telegramOptions,
+        IOptions<WaitOptions> waitOptions,
+        IBackgroundJobClient jobs,
         MessagesDataStorage messagesDataStorage)
     {
         _botClient = botClient;
         _telegramOptions = telegramOptions;
+        _waitOptions = waitOptions;
+        _jobs = jobs;
         _messagesDataStorage = messagesDataStorage;
     }
 
     public async Task UpdateChannelInfo(SocketVoiceChannel voiceChannel)
     {
+        var channelId = voiceChannel.Id;
         var tags = string.Empty;
+        var hasUsers = voiceChannel.ConnectedUsers.Count > 0;
 
         if (voiceChannel.UserLimit.HasValue)
         {
             tags += $"{voiceChannel.ConnectedUsers.Count}/{voiceChannel.UserLimit}";
         }
 
-        var users = string.Join("\n", voiceChannel.ConnectedUsers.Select(UserToText).ToArray());
+        var users = hasUsers
+            ? string.Join("\n", voiceChannel.ConnectedUsers.Select(UserToText).ToArray())
+            : "Nobody here anymore...";
+
         var stateMessage = $"<b>{voiceChannel.Name}</b> {tags}\n\n{users}";
 
-        var messageId = await _messagesDataStorage.GetChannelStateMessage(voiceChannel.Id);
+        var messageId = await _messagesDataStorage.GetChannelStateMessage(channelId);
 
         if (messageId.HasValue)
         {
@@ -44,8 +57,10 @@ public class ChannelsStateManager
             {
                 await _botClient.EditMessageTextAsync(ChatId, messageId.Value, stateMessage, parseMode: ParseMode.Html);
             }
-            catch // we weren't able to edit, so send another one
+            catch (ApiRequestException ex) // we weren't able to edit, so send another one
             {
+                if (ex.Message.Contains("not modified")) return;
+
                 await SendMessage();
             }
         }
@@ -54,13 +69,53 @@ public class ChannelsStateManager
             await SendMessage();
         }
 
+        if (hasUsers)
+        {
+            await CancelChannelMessageDelete(channelId);
+        }
+        else
+        {
+            var jobId = _jobs.Schedule(
+                (ChannelsStateManager m) => m.DeleteChannelMessage(channelId),
+                TimeSpan.FromSeconds(_waitOptions.Value.WaitBeforeStatusDelete)
+            );
+
+            await _messagesDataStorage.SaveDeleteMessageJobId(channelId, jobId);
+        }
+
         async Task SendMessage()
         {
             var message = await _botClient.SendTextMessageAsync(ChatId, stateMessage, parseMode: ParseMode.Html);
 
-            await _messagesDataStorage.SetChannelStateMessage(voiceChannel.Id, message.MessageId);
+            await _messagesDataStorage.SetChannelStateMessage(channelId, message.MessageId);
             await _botClient.PinChatMessageAsync(ChatId, message.MessageId);
         }
+    }
+
+    public async Task DeleteChannelMessage(ulong channelId)
+    {
+        var messageId = await _messagesDataStorage.GetChannelStateMessage(channelId);
+
+        if (!messageId.HasValue) return;
+
+        try
+        {
+            await _botClient.DeleteMessageAsync(ChatId, messageId.Value);
+            await _messagesDataStorage.SetChannelStateMessage(channelId, null);
+        }
+        catch
+        {
+            // ignored
+        }
+    }
+
+    public async Task CancelChannelMessageDelete(ulong channelId)
+    {
+        var jobId = await _messagesDataStorage.GetDeleteMessageJobId(channelId);
+
+        if (jobId is null) return;
+
+        _jobs.Delete(jobId);
     }
 
     private string UserToText(SocketGuildUser user)
@@ -104,4 +159,6 @@ public class ChannelsStateManager
 
         return res;
     }
+
+    private string GetDeleteMessageJobName(SocketVoiceChannel channel) => $"delete-message-{channel.Id}";
 }

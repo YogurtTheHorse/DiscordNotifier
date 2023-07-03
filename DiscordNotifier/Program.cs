@@ -3,6 +3,8 @@ using DiscordNotifier;
 using DiscordNotifier.Options;
 using DiscordNotifier.Services;
 using DiscordNotifier.Workers;
+using Hangfire;
+using Hangfire.Redis.StackExchange;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using Telegram.Bot;
@@ -11,6 +13,7 @@ var builder = Host.CreateApplicationBuilder(args);
 var multiplexer = ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? string.Empty);
 
 builder.Services.AddHostedService<DiscordWorker>();
+builder.Services.AddHostedService<DeletePinMessagesWorker>();
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(multiplexer);
 
@@ -31,6 +34,12 @@ builder.Services.AddSingleton<ITelegramBotClient>(s =>
     return new TelegramBotClient(o.Value.Token);
 });
 builder.Services.AddSingleton<DiscordSocketClient>(_ => new DiscordSocketClient());
+
+builder.Services.AddHangfire(configuration => configuration.UseRedisStorage(multiplexer,
+    new RedisStorageOptions {
+        Prefix = "discord-notifier:hangfire:"
+    }));
+builder.Services.AddHangfireServer();
 
 var host = builder.Build();
 host.Run();
