@@ -15,13 +15,13 @@ public class MessagesDataStorage
     {
         var db = _redis.GetDatabase();
 
-        await db.StringSetAsync($"job:delete-channel:{channelId}", jobId);
+        await db.StringSetAsync($"community:discord-notifier:job:delete-channel:{channelId}", jobId);
     }
 
     public async Task<string?> GetDeleteMessageJobId(ulong channelId)
     {
         var db = _redis.GetDatabase();
-        var res = await db.StringGetAsync($"job:delete-channel:{channelId}");
+        var res = await db.StringGetAsync($"community:discord-notifier:job:delete-channel:{channelId}");
 
         return res.HasValue
             ? res.ToString()
@@ -31,7 +31,7 @@ public class MessagesDataStorage
     public async Task<int?> GetChannelStateMessage(ulong channelId)
     {
         var db = _redis.GetDatabase();
-        var v = await db.StringGetAsync($"msg:channel:{channelId}");
+        var v = await db.StringGetAsync($"community:discord-notifier:msg:channel:{channelId}");
 
         return v.HasValue
             ? (int)v
@@ -42,6 +42,6 @@ public class MessagesDataStorage
     {
         var db = _redis.GetDatabase();
         
-        await db.StringSetAsync($"msg:channel:{channelId}", messageId);
+        await db.StringSetAsync($"community:discord-notifier:msg:channel:{channelId}", messageId);
     }
 }

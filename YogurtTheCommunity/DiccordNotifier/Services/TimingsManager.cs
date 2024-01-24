@@ -23,7 +23,7 @@ public class TimingsManager
     {
         var db = _redis.GetDatabase();
 
-        var val = await db.StringGetAsync($"timings:{userId}:{name}");
+        var val = await db.StringGetAsync($"community:discord-notifier:timings:{userId}:{name}");
 
         return val.HasValue
             ? new DateTime(ticks: (long)val)
@@ -34,6 +34,6 @@ public class TimingsManager
     {
         var db = _redis.GetDatabase();
 
-        await db.StringSetAsync($"timings:{userId}:{name}", time.Ticks);
+        await db.StringSetAsync($"community:discord-notifier:timings:{userId}:{name}", time.Ticks);
     }
 }
