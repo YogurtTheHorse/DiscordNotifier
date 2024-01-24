@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordNotifier", "DiscordNotifier\DiscordNotifier.csproj", "{A15336DC-A835-4876-8A87-90F0F3C3A016}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YogurtTheCommunity", "YogurtTheCommunity\YogurtTheCommunity.csproj", "{A15336DC-A835-4876-8A87-90F0F3C3A016}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

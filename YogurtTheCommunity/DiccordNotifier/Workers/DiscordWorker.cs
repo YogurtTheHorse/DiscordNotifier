@@ -1,10 +1,9 @@
 using Discord;
 using Discord.WebSocket;
-using DiscordNotifier.Options;
-using DiscordNotifier.Services;
 using Microsoft.Extensions.Options;
+using YogurtTheCommunity.DiscordNotifier.Services;
 
-namespace DiscordNotifier.Workers;
+namespace YogurtTheCommunity.DiscordNotifier.Workers;
 
 public class DiscordWorker : BackgroundService
 {
@@ -12,28 +11,34 @@ public class DiscordWorker : BackgroundService
     private readonly EventManager _eventManager;
     private readonly DiscordSocketClient _discordSocketClient;
     private readonly ChannelsStateManager _channelsStateManager;
-    private readonly IOptions<DiscordOptions> _discordOptions;
+    private readonly IOptions<DiscordNotifierOptions> _notifierOptions;
 
     public DiscordWorker(
         ILogger<DiscordWorker> logger,
         EventManager eventManager,
         DiscordSocketClient discordSocketClient,
         ChannelsStateManager channelsStateManager,
-        IOptions<DiscordOptions> discordOptions)
+        IOptions<DiscordNotifierOptions> notifierOptions)
     {
         _logger = logger;
         _eventManager = eventManager;
         _discordSocketClient = discordSocketClient;
         _channelsStateManager = channelsStateManager;
-        _discordOptions = discordOptions;
+        _notifierOptions = notifierOptions;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!_notifierOptions.Value.Enabled)
+        {
+            _logger.LogInformation("Not enabling DiscordWorker because it's disabled in config");
+            return;
+        }
+        
         _discordSocketClient.Log += Log;
         _discordSocketClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
 
-        await _discordSocketClient.LoginAsync(TokenType.Bot, _discordOptions.Value.Token);
+        await _discordSocketClient.LoginAsync(TokenType.Bot, _notifierOptions.Value.Token);
         await _discordSocketClient.StartAsync();
 
         await Task.Delay(-1, stoppingToken);

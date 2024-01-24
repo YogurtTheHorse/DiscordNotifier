@@ -1,33 +1,29 @@
 using Discord.WebSocket;
-using DiscordNotifier.Options;
 using Hangfire;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types.Enums;
 
-namespace DiscordNotifier.Services;
+namespace YogurtTheCommunity.DiscordNotifier.Services;
 
 public class ChannelsStateManager
 {
     private readonly ITelegramBotClient _botClient;
-    private readonly IOptions<TelegramOptions> _telegramOptions;
-    private readonly IOptions<WaitOptions> _waitOptions;
+    private readonly IOptions<DiscordNotifierOptions> _notifierOptions;
     private readonly IBackgroundJobClient _jobs;
     private readonly MessagesDataStorage _messagesDataStorage;
 
-    private long ChatId => _telegramOptions.Value.TargetId;
+    private long ChatId => _notifierOptions.Value.TelegramTargetId;
 
     public ChannelsStateManager(
         ITelegramBotClient botClient,
-        IOptions<TelegramOptions> telegramOptions,
-        IOptions<WaitOptions> waitOptions,
+        IOptions<DiscordNotifierOptions> notifierOptions,
         IBackgroundJobClient jobs,
         MessagesDataStorage messagesDataStorage)
     {
         _botClient = botClient;
-        _telegramOptions = telegramOptions;
-        _waitOptions = waitOptions;
+        _notifierOptions = notifierOptions;
         _jobs = jobs;
         _messagesDataStorage = messagesDataStorage;
     }
@@ -77,7 +73,7 @@ public class ChannelsStateManager
         {
             var jobId = _jobs.Schedule(
                 (ChannelsStateManager m) => m.DeleteChannelMessage(channelId),
-                TimeSpan.FromSeconds(_waitOptions.Value.WaitBeforeStatusDelete)
+                TimeSpan.FromSeconds(_notifierOptions.Value.WaitBeforeStatusDelete)
             );
 
             await _messagesDataStorage.SaveDeleteMessageJobId(channelId, jobId);

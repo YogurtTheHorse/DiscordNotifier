@@ -1,30 +1,27 @@
 using Discord.WebSocket;
-using DiscordNotifier.Options;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 
-namespace DiscordNotifier.Services;
+namespace YogurtTheCommunity.DiscordNotifier.Services;
 
 public class EventManager
 {
-    private readonly IOptions<TelegramOptions> _telegramOptions;
-    private readonly IOptions<WaitOptions> _waitOptions;
+    private readonly IOptions<DiscordNotifierOptions> _notifierOptions;
     private readonly ChannelsStateManager _channelsStateManager;
     private readonly TimingsManager _timingsManager;
     private readonly ITelegramBotClient _telegramBotClient;
 
-    private long ChatId => _telegramOptions.Value.TargetId;
+    private long ChatId => _notifierOptions.Value.TelegramTargetId;
 
     public EventManager(
-        IOptions<TelegramOptions> telegramOptions,
-        IOptions<WaitOptions> waitOptions,
+        IOptions<DiscordNotifierOptions> notifierOptions,
         ChannelsStateManager channelsStateManager,
         TimingsManager timingsManager,
-        ITelegramBotClient telegramBotClient)
+        ITelegramBotClient telegramBotClient
+    )
     {
-        _telegramOptions = telegramOptions;
-        _waitOptions = waitOptions;
+        _notifierOptions = notifierOptions;
         _channelsStateManager = channelsStateManager;
         _timingsManager = timingsManager;
         _telegramBotClient = telegramBotClient;
@@ -52,7 +49,6 @@ public class EventManager
     {
         await _channelsStateManager.UpdateChannelInfo(voiceChannel);
         await _timingsManager.SetLastStreamingTime(user.Id, DateTime.Now);
-
     }
 
     public async Task UserStartedStreaming(SocketUser user, SocketVoiceChannel voiceChannel)
@@ -61,7 +57,7 @@ public class EventManager
 
         var lastJoined = await _timingsManager.GetLastStreamingTime(user.Id);
 
-        if ((DateTime.Now - lastJoined).TotalSeconds > _waitOptions.Value.WaitBetweenStreaming)
+        if ((DateTime.Now - lastJoined).TotalSeconds > _notifierOptions.Value.WaitBetweenStreaming)
         {
             await _timingsManager.SetLastStreamingTime(user.Id, DateTime.Now);
 

@@ -1,6 +1,6 @@
 using StackExchange.Redis;
 
-namespace DiscordNotifier.Services;
+namespace YogurtTheCommunity.DiscordNotifier.Services;
 
 public class TimingsManager
 {

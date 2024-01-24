@@ -1,13 +1,13 @@
 using Discord.WebSocket;
-using DiscordNotifier;
-using DiscordNotifier.Options;
-using DiscordNotifier.Services;
-using DiscordNotifier.Workers;
 using Hangfire;
+using YogurtTheCommunity.Options;
+using YogurtTheCommunity.DiscordNotifier;
 using Hangfire.Redis.StackExchange;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using Telegram.Bot;
+using YogurtTheCommunity.DiscordNotifier.Services;
+using YogurtTheCommunity.DiscordNotifier.Workers;
 
 var builder = Host.CreateApplicationBuilder(args);
 var multiplexer = ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? string.Empty);
@@ -24,8 +24,7 @@ builder.Services.AddSingleton<TimingsManager>();
 builder.Services.AddSingleton<MessagesDataStorage>();
 
 builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection("Telegram"));
-builder.Services.Configure<DiscordOptions>(builder.Configuration.GetSection("Discord"));
-builder.Services.Configure<WaitOptions>(builder.Configuration.GetSection("Wait"));
+builder.Services.Configure<DiscordNotifierOptions>(builder.Configuration.GetSection("DiscordNotifier"));
 
 builder.Services.AddSingleton<ITelegramBotClient>(s =>
 {
@@ -37,7 +36,7 @@ builder.Services.AddSingleton<DiscordSocketClient>(_ => new DiscordSocketClient(
 
 builder.Services.AddHangfire(configuration => configuration.UseRedisStorage(multiplexer,
     new RedisStorageOptions {
-        Prefix = "discord-notifier:hangfire:"
+        Prefix = "community:hangfire:"
     }));
 builder.Services.AddHangfireServer();
 

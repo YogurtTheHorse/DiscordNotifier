@@ -1,19 +1,18 @@
-using DiscordNotifier.Options;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-namespace DiscordNotifier.Workers;
+namespace YogurtTheCommunity.DiscordNotifier.Workers;
 
 public class DeletePinMessagesWorker : BackgroundService
 {
     private readonly ITelegramBotClient _botClient;
-    private readonly IOptions<TelegramOptions> _telegramOptions;
+    private readonly IOptions<DiscordNotifierOptions> _notifierOptions;
 
-    public DeletePinMessagesWorker(ITelegramBotClient botClient, IOptions<TelegramOptions> telegramOptions)
+    public DeletePinMessagesWorker(ITelegramBotClient botClient, IOptions<DiscordNotifierOptions> notifierOptions)
     {
         _botClient = botClient;
-        _telegramOptions = telegramOptions;
+        _notifierOptions = notifierOptions;
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -28,7 +27,7 @@ public class DeletePinMessagesWorker : BackgroundService
     private async Task OnUpdate(ITelegramBotClient _, Update update, CancellationToken cts)
     {
         if (update is not { ChannelPost : { Chat.Id: { } chatId, PinnedMessage: not null, MessageId: { } messageId } }
-            || chatId != _telegramOptions.Value.TargetId) return;
+            || chatId != _notifierOptions.Value.TelegramTargetId) return;
 
         try
         {
