@@ -123,7 +123,15 @@ public class TelegramListenerWorker : BackgroundService
             return;
         }
 
-        await commandListener.Execute(commandContext);
+        try
+        {
+            await commandListener.Execute(commandContext);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error executing command {command}", commandListener.Command);
+            await commandContext.Reply($"Error executing command: {ex.Message}");
+        }
     }
 
     private async Task<CommandContext> GetCommandContext(Message message, ICommandListener commandListener)
