@@ -91,7 +91,7 @@ public class MembersStorage
         return tgId.HasValue ? (long)tgId : null;
     }
 
-    private async Task<Guid> GetIdFromTelegramId(long telegramId)
+    public async Task<Guid> GetIdFromTelegramId(long telegramId)
     {
         if (TryGetDefaultMemberFromTelegram(telegramId, out var defaultMember))
         {

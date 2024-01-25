@@ -6,6 +6,7 @@ using YogurtTheCommunity.Abstractions;
 using YogurtTheCommunity.Commands;
 using YogurtTheCommunity.Data;
 using YogurtTheCommunity.Services;
+using YogurtTheCommunity.Utils;
 
 namespace YogurtTheCommunity.Workers;
 
@@ -45,7 +46,8 @@ public class TelegramListenerWorker : BackgroundService
             OnPollingError,
             new ReceiverOptions {
                 AllowedUpdates = new[] {
-                    UpdateType.Message, UpdateType.ChatMember, UpdateType.CallbackQuery, UpdateType.ChannelPost
+                    UpdateType.Message, UpdateType.ChatMember, UpdateType.CallbackQuery, UpdateType.ChannelPost,
+                    UpdateType.ChatJoinRequest
                 }
             },
             cancellationToken: stoppingToken
@@ -74,7 +76,7 @@ public class TelegramListenerWorker : BackgroundService
     private async Task OnUpdate(ITelegramBotClient client, Update update, CancellationToken cts)
     {
         await InternalUpdateProcess(update, cts);
-        
+
         foreach (var listener in _updateListeners)
         {
             try
@@ -128,7 +130,7 @@ public class TelegramListenerWorker : BackgroundService
     {
         var argsStart = message.Text?.IndexOf(' ') ?? -1;
         var arguments = new Dictionary<CommandArgument, string>();
-        
+
         if (argsStart > -1)
         {
             ParseArguments(message.Text!, commandListener, argsStart, arguments);
@@ -137,13 +139,14 @@ public class TelegramListenerWorker : BackgroundService
         return new CommandContext(
             arguments,
             async text => await _botClient.SendTextMessageAsync(message.Chat.Id, text),
-            await GetMemberInfo(message.From!),
-            message.ReplyToMessage is { From: { } replyTo } ? await GetMemberInfo(replyTo) : null,
+            await _membersStorage.GetOrCreate(message.From!),
+            message.ReplyToMessage is { From: { } replyTo } ? await _membersStorage.GetOrCreate(replyTo) : null,
             message.Chat.Id.ToString()
         );
     }
 
-    private static void ParseArguments(string text, ICommandListener commandListener, int argsStart, Dictionary<CommandArgument, string> arguments)
+    private static void ParseArguments(string text, ICommandListener commandListener, int argsStart,
+        Dictionary<CommandArgument, string> arguments)
     {
         var currentArgumentStart = argsStart + 1;
 
@@ -166,7 +169,7 @@ public class TelegramListenerWorker : BackgroundService
 
                 case ArgumentType.Filler:
                     arguments.Add(argument, text[currentArgumentStart..].Trim());
-                    
+
                     return;
             }
 
@@ -175,14 +178,6 @@ public class TelegramListenerWorker : BackgroundService
                 currentArgumentStart++;
             }
         }
-    }
-
-    public async Task<MemberInfo> GetMemberInfo(User user)
-    {
-        var name = $"{user.FirstName} {user.LastName}";
-
-        return await _membersStorage.GetMemberByTelegramId(user.Id)
-               ?? await _membersStorage.CreateFromTelegram(user.Id, name);
     }
 
     private static bool TryParseCommandName(string? messageText, out string command)

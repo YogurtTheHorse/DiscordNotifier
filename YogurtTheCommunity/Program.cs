@@ -11,6 +11,7 @@ using YogurtTheCommunity.Commands;
 using YogurtTheCommunity.Commands.DefaultCommands;
 using YogurtTheCommunity.DiscordNotifier.Services;
 using YogurtTheCommunity.DiscordNotifier.Workers;
+using YogurtTheCommunity.JoinsManager;
 using YogurtTheCommunity.Services;
 using YogurtTheCommunity.TitleGiver;
 using YogurtTheCommunity.Workers;
@@ -62,6 +63,14 @@ builder.Services.AddSingleton<ICommandListener, SetTitleCommand>();
 builder.Services.AddSingleton<IInfoProvider, TitleInfoProvider>();
 builder.Services.AddSingleton<TitlesManager>();
 builder.Services.AddSingleton<TitlesStorage>();
+
+#endregion
+
+#region Joins
+
+builder.Services.AddSingleton<ITelegramUpdateListener, JoinListener>();
+builder.Services.AddSingleton<ICommandListener, ApproveCommand>();
+builder.Services.AddSingleton<JoinsStorage>();
 
 #endregion
 
