@@ -44,6 +44,6 @@ public class SetTitleCommand : ICommandListener
 
         var res = await _titlesManager.UpdateTitle(memberInfo.Id, title);
 
-        await commandContext.Reply(res ? "Ok" : "Error");
+        await commandContext.Reply(res ? "Done" : "Error");
     }
 }

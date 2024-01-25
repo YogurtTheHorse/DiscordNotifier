@@ -60,6 +60,7 @@ builder.Services.Configure<DiscordNotifierOptions>(builder.Configuration.GetSect
 
 builder.Services.AddSingleton<ITelegramUpdateListener, TitleJoinListener>();
 builder.Services.AddSingleton<ICommandListener, SetTitleCommand>();
+builder.Services.AddSingleton<ICommandListener, SyncTitleCommand>();
 builder.Services.AddSingleton<IInfoProvider, TitleInfoProvider>();
 builder.Services.AddSingleton<TitlesManager>();
 builder.Services.AddSingleton<TitlesStorage>();
