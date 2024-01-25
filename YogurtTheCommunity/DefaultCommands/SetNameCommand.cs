@@ -15,7 +15,7 @@ public class SetNameCommand : ICommandListener
     };
 
     public IList<CommandArgument> Arguments { get; } = new[] {
-        new CommandArgument("name", string.Empty)
+        new CommandArgument("name", string.Empty, ArgumentType.Filler)
     };
 
     public SetNameCommand(MembersStorage members)
