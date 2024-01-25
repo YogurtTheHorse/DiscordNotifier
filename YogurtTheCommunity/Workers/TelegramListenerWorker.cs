@@ -1,5 +1,7 @@
 using Telegram.Bot;
+using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using YogurtTheCommunity.Abstractions;
 using YogurtTheCommunity.Commands;
 using YogurtTheCommunity.Data;
@@ -12,6 +14,7 @@ public class TelegramListenerWorker : BackgroundService
     private readonly ITelegramBotClient _botClient;
 
     private readonly MembersStorage _membersStorage;
+    private readonly PermissionsManager _permissionsManager;
 
     private readonly ICommandListener[] _commandListeners;
     private readonly IEnumerable<ITelegramUpdateListener> _updateListeners;
@@ -23,21 +26,42 @@ public class TelegramListenerWorker : BackgroundService
         IEnumerable<ICommandListener> commandListeners,
         IEnumerable<ITelegramUpdateListener> updateListeners,
         MembersStorage membersStorage,
+        PermissionsManager permissionsManager,
         ILogger<TelegramListenerWorker> logger
     )
     {
         _botClient = botClient;
         _updateListeners = updateListeners;
         _membersStorage = membersStorage;
+        _permissionsManager = permissionsManager;
         _logger = logger;
         _commandListeners = commandListeners.ToArray();
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _botClient.StartReceiving(OnUpdate, OnPollingError, cancellationToken: stoppingToken);
+        _botClient.StartReceiving(
+            OnUpdate,
+            OnPollingError,
+            new ReceiverOptions {
+                AllowedUpdates = new[] {
+                    UpdateType.Message, UpdateType.ChatMember, UpdateType.CallbackQuery
+                }
+            },
+            cancellationToken: stoppingToken
+        );
 
-        return Task.CompletedTask;
+        var commands = _commandListeners
+            .Select(x => new BotCommand {
+                Command = x.Command.ToLowerInvariant(),
+                Description = $"{string.Join(' ', x.Arguments.Select(a => $"{a.Name}"))} - {x.Description}"
+            })
+            .ToArray();
+
+        await _botClient.SetMyCommandsAsync(
+            commands,
+            cancellationToken: stoppingToken
+        );
     }
 
     private Task OnPollingError(ITelegramBotClient client, Exception exception, CancellationToken cts)
@@ -47,27 +71,42 @@ public class TelegramListenerWorker : BackgroundService
         return Task.CompletedTask;
     }
 
-    private async Task OnUpdate(ITelegramBotClient client, Update update, CancellationToken cts) =>
+    private async Task OnUpdate(ITelegramBotClient client, Update update, CancellationToken cts)
+    {
+        await InternalUpdateProcess(update, cts);
+        
+        foreach (var listener in _updateListeners)
+        {
+            try
+            {
+                await listener.OnUpdate(client, update, cts);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in update listener {listener}", listener.GetType().Name);
+            }
+        }
         await Task.WhenAll(
             _updateListeners
                 .Select(x => x.OnUpdate(client, update, cts))
-                .Append(InternalUpdateProcess(client, update, cts))
+                .Append(InternalUpdateProcess(update, cts))
         );
+    }
 
-    private async Task InternalUpdateProcess(ITelegramBotClient _, Update update, CancellationToken cts)
+    private async Task InternalUpdateProcess(Update update, CancellationToken cts)
     {
         switch (update)
         {
             case { Message: { } message }:
-                await ProcessMessage(message);
+                await ProcessMessage(message, cts);
 
                 break;
         }
     }
 
-    private async Task ProcessMessage(Message message)
+    private async Task ProcessMessage(Message message, CancellationToken _)
     {
-        if (!TryParseCommandName(message.Text, out string command)) return;
+        if (!TryParseCommandName(message.Text, out var command)) return;
 
         var commandListener = _commandListeners.FirstOrDefault(
             x => x.Command.Equals(command, StringComparison.InvariantCultureIgnoreCase)
@@ -76,6 +115,16 @@ public class TelegramListenerWorker : BackgroundService
         if (commandListener is null) return;
 
         var commandContext = await GetCommandContext(message, commandListener);
+
+        // todo: create command executor
+
+        if (!_permissionsManager.HasPermissions(commandContext.MemberInfo, commandListener.RequiredPermissions))
+        {
+            var roles = string.Join(", ", commandListener.RequiredPermissions);
+            await commandContext.Reply($"You don't have permissions to execute this command ({roles})");
+
+            return;
+        }
 
         await commandListener.Execute(commandContext);
     }
@@ -98,7 +147,8 @@ public class TelegramListenerWorker : BackgroundService
             arguments,
             async text => await _botClient.SendTextMessageAsync(message.Chat.Id, text),
             await GetMemberInfo(message.From!),
-            message.ReplyToMessage is { From: { } replyTo } ? await GetMemberInfo(replyTo) : null
+            message.ReplyToMessage is { From: { } replyTo } ? await GetMemberInfo(replyTo) : null,
+            message.Chat.Id.ToString()
         );
     }
 

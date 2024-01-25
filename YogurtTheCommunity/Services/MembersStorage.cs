@@ -12,6 +12,7 @@ public class MembersStorage
     private readonly IOptions<MembersDefaultOptions> _membersDefaultOptions;
 
     private const string NameField = "id";
+    private const string TelegramIdField = "tg-id";
 
     public MembersStorage(
         IConnectionMultiplexer redis,
@@ -54,10 +55,40 @@ public class MembersStorage
     {
         var db = _redis.GetDatabase();
 
-        await db.HashSetAsync($"community:members:{id}", new[]
+        await db.HashSetAsync($"community:members:{id}",
+            new[] {
+                new HashEntry(NameField, name)
+            });
+    }
+
+    public async Task AddRole(Guid memberId, string role)
+    {
+        var db = _redis.GetDatabase();
+
+        await db.SetAddAsync($"community:members:{memberId}:roles", role);
+    }
+
+    public async Task RemoveRole(Guid memberId, string role)
+    {
+        var db = _redis.GetDatabase();
+
+        await db.SetRemoveAsync($"community:members:{memberId}:roles", role);
+    }
+
+    public async Task<long?> GetTelegramId(Guid id)
+    {
+        var defaultId = _membersDefaultOptions.Value.TelegramDefaultIds.FirstOrDefault(x => x.Value.DefaultId == id).Key;
+
+        if (defaultId != 0)
         {
-            new HashEntry(NameField, name)
-        });
+            return defaultId;
+        }
+
+        var db = _redis.GetDatabase();
+
+        var tgId = await db.HashGetAsync($"community:members:{id}", TelegramIdField);
+
+        return tgId.HasValue ? (long)tgId : null;
     }
 
     private async Task<Guid> GetIdFromTelegramId(long telegramId)
@@ -86,16 +117,16 @@ public class MembersStorage
     public async Task<MemberInfo> CreateFromTelegram(long telegramId, string name)
     {
         var defaultMember = GetDefaultMemberFromTelegram(telegramId);
-        
+
         var id = await GetIdFromTelegramId(telegramId);
         var roles = defaultMember?.DefaultRoles ?? _membersDefaultOptions.Value.DefaultRoles;
-        
+
         var db = _redis.GetDatabase();
-        
-        await db.HashSetAsync($"community:members:{id}", new[]
-        {
-            new HashEntry(NameField, name)
-        });
+
+        await db.HashSetAsync($"community:members:{id}",
+            new[] {
+                new HashEntry(NameField, name), new HashEntry(TelegramIdField, telegramId)
+            });
         await db.SetAddAsync($"community:members:{id}:roles", roles.Select(r => (RedisValue)r).ToArray());
 
         return new MemberInfo(id, name, roles);

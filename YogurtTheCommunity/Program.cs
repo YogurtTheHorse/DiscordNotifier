@@ -12,6 +12,7 @@ using YogurtTheCommunity.Commands.DefaultCommands;
 using YogurtTheCommunity.DiscordNotifier.Services;
 using YogurtTheCommunity.DiscordNotifier.Workers;
 using YogurtTheCommunity.Services;
+using YogurtTheCommunity.TitleGiver;
 using YogurtTheCommunity.Workers;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -22,12 +23,18 @@ var multiplexer = ConnectionMultiplexer.Connect(builder.Configuration.GetConnect
 
 builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection("Telegram"));
 builder.Services.Configure<MembersDefaultOptions>(builder.Configuration.GetSection("Members"));
+builder.Services.Configure<PermissionsOptions>(builder.Configuration.GetSection("Permissions"));
 
 builder.Services.AddHostedService<TelegramListenerWorker>();
 builder.Services.AddSingleton<ICommandListener, InfoCommand>();
 builder.Services.AddSingleton<ICommandListener, SetNameCommand>();
+builder.Services.AddSingleton<ICommandListener, AddRoleCommand>();
+builder.Services.AddSingleton<ICommandListener, RegisterChat>();
+builder.Services.AddSingleton<ICommandListener, RemoveRoleCommand>();
 
 builder.Services.AddSingleton<MembersStorage>();
+builder.Services.AddSingleton<ChatsRegistry>();
+builder.Services.AddSingleton<PermissionsManager>();
 
 #endregion
 
@@ -45,6 +52,15 @@ builder.Services.AddSingleton<TimingsManager>();
 builder.Services.AddSingleton<MessagesDataStorage>();
 
 builder.Services.Configure<DiscordNotifierOptions>(builder.Configuration.GetSection("DiscordNotifier"));
+
+#endregion
+
+#region Titles
+
+builder.Services.AddSingleton<ITelegramUpdateListener, TitleJoinListener>();
+builder.Services.AddSingleton<ICommandListener, SetTitleCommand>();
+builder.Services.AddSingleton<TitlesManager>();
+builder.Services.AddSingleton<TitlesStorage>();
 
 #endregion
 

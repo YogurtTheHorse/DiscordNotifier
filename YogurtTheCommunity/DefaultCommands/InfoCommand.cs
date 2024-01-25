@@ -6,6 +6,10 @@ public class InfoCommand : ICommandListener
 
     public string Description => "sends info about user";
 
+    public string[] RequiredPermissions { get; } = {
+        "base.info.read"
+    };
+
     public IList<CommandArgument> Arguments => Array.Empty<CommandArgument>();
 
     public async Task Execute(CommandContext commandContext)

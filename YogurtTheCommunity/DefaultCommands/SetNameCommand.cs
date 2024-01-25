@@ -9,6 +9,10 @@ public class SetNameCommand : ICommandListener
     public string Command => "setName";
 
     public string Description => "sets member name in system";
+    
+    public string[] RequiredPermissions { get; } = {
+        "base.info.edit-own"
+    };
 
     public IList<CommandArgument> Arguments { get; } = new[] {
         new CommandArgument("name", string.Empty)

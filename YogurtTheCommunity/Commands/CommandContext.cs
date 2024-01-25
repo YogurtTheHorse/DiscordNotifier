@@ -12,13 +12,16 @@ public class CommandContext
 
     public MemberInfo? ReplyTo { get; }
 
-    public CommandContext(Dictionary<CommandArgument, string> argumentValues, Func<string, Task> reply, MemberInfo memberInfo, MemberInfo? replyTo)
+    public string ChatId { get; }
+
+    public CommandContext(Dictionary<CommandArgument, string> argumentValues, Func<string, Task> reply, MemberInfo memberInfo, MemberInfo? replyTo, string chatId)
     {
         _argumentValues = argumentValues;
         
         Reply = reply;
         MemberInfo = memberInfo;
         ReplyTo = replyTo;
+        ChatId = chatId;
     }
 
     public string GetArgument(CommandArgument argument) =>

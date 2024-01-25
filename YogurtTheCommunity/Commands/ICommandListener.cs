@@ -6,6 +6,8 @@ public interface ICommandListener
     
     string Description { get; }
     
+    string[] RequiredPermissions => Array.Empty<string>();
+    
     IList<CommandArgument> Arguments { get; }
 
     Task Execute(CommandContext commandContext);
