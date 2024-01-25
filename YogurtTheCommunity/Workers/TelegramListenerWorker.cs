@@ -86,11 +86,6 @@ public class TelegramListenerWorker : BackgroundService
                 _logger.LogError(ex, "Error in update listener {listener}", listener.GetType().Name);
             }
         }
-        await Task.WhenAll(
-            _updateListeners
-                .Select(x => x.OnUpdate(client, update, cts))
-                .Append(InternalUpdateProcess(update, cts))
-        );
     }
 
     private async Task InternalUpdateProcess(Update update, CancellationToken cts)
