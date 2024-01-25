@@ -127,15 +127,11 @@ public class TelegramListenerWorker : BackgroundService
     private async Task<CommandContext> GetCommandContext(Message message, ICommandListener commandListener)
     {
         var argsStart = message.Text?.IndexOf(' ') ?? -1;
-        var argsString = argsStart == -1
-            ? Array.Empty<string>()
-            : message.Text![(argsStart + 1)..].Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var arguments = new Dictionary<CommandArgument, string>();
-
-        for (var i = 0; i < commandListener.Arguments.Count && i < argsString.Length; i++)
+        
+        if (argsStart > -1)
         {
-            var argument = commandListener.Arguments[i];
-            arguments.Add(argument, argsString[i]);
+            ParseArguments(message.Text!, commandListener, argsStart, arguments);
         }
 
         return new CommandContext(
@@ -145,6 +141,40 @@ public class TelegramListenerWorker : BackgroundService
             message.ReplyToMessage is { From: { } replyTo } ? await GetMemberInfo(replyTo) : null,
             message.Chat.Id.ToString()
         );
+    }
+
+    private static void ParseArguments(string text, ICommandListener commandListener, int argsStart, Dictionary<CommandArgument, string> arguments)
+    {
+        var currentArgumentStart = argsStart + 1;
+
+        for (var i = 0; i < commandListener.Arguments.Count && currentArgumentStart < text.Length; i++)
+        {
+            var argument = commandListener.Arguments[i];
+
+            switch (argument.ArgumentType)
+            {
+                case ArgumentType.Default:
+                    var nextSpace = text.IndexOf(' ', currentArgumentStart + 1);
+                    var value = nextSpace >= 0
+                        ? text[currentArgumentStart..nextSpace]
+                        : text[currentArgumentStart..];
+
+                    arguments.Add(argument, value.Trim());
+                    currentArgumentStart += value.Length;
+
+                    break;
+
+                case ArgumentType.Filler:
+                    arguments.Add(argument, text[currentArgumentStart..].Trim());
+                    
+                    return;
+            }
+
+            while (currentArgumentStart < text.Length && text[currentArgumentStart] == ' ')
+            {
+                currentArgumentStart++;
+            }
+        }
     }
 
     public async Task<MemberInfo> GetMemberInfo(User user)

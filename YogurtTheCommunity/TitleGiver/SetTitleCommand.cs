@@ -19,7 +19,7 @@ public class SetTitleCommand : ICommandListener
     };
 
     public IList<CommandArgument> Arguments { get; } = new[] {
-        new CommandArgument("title", string.Empty)
+        new CommandArgument("title", string.Empty, ArgumentType.Filler)
     };
 
     public SetTitleCommand(TitlesStorage titlesStorage, TitlesManager titlesManager)
