@@ -45,7 +45,7 @@ public class TelegramListenerWorker : BackgroundService
             OnPollingError,
             new ReceiverOptions {
                 AllowedUpdates = new[] {
-                    UpdateType.Message, UpdateType.ChatMember, UpdateType.CallbackQuery
+                    UpdateType.Message, UpdateType.ChatMember, UpdateType.CallbackQuery, UpdateType.ChannelPost
                 }
             },
             cancellationToken: stoppingToken
