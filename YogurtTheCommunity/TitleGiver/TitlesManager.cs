@@ -48,11 +48,19 @@ public class TitlesManager
 
         if (admins.All(x => x.User.Id != tgId))
         {
-            await _telegramBotClient.PromoteChatMemberAsync(
-                chat,
-                tgId, 
-                canManageChat: true
-            );
+            try
+            {
+                await _telegramBotClient.PromoteChatMemberAsync(
+                    chat,
+                    tgId,
+                    canManageChat: true
+                );
+            }
+            catch (ApiRequestException ex)
+            {
+                _logger.LogError(ex, "Error promoting {memberId} in chat {chat}", memberId, chat);
+                return;
+            }
         }
 
         try
@@ -61,7 +69,7 @@ public class TitlesManager
         }
         catch (ApiRequestException ex)
         {
-            _logger.LogError($"Error setting title in chat {chat} for {memberId} ({ex.Message})");
+            _logger.LogError(ex, "Error setting title in chat {chat} for {memberId}", chat, memberId);
         }
     }
 }

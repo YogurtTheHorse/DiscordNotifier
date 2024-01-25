@@ -31,13 +31,14 @@ public class SetTitleCommand : ICommandListener
     public async Task Execute(CommandContext commandContext)
     {
         var memberInfo = commandContext.ReplyTo ?? commandContext.MemberInfo;
+        var title = commandContext.GetArgument(Arguments[0]);
 
-        if (string.IsNullOrEmpty(commandContext.GetArgument(Arguments[0])))
+        if (string.IsNullOrEmpty(title))
         {
             await commandContext.Reply("Invalid title");
+            return;
         }
 
-        var title = commandContext.GetArgument(Arguments[0]);
 
         await _titlesStorage.SetTitle(memberInfo.Id, title);
 
