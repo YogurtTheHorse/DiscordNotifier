@@ -16,9 +16,9 @@ public class TelegramMessageFunctions : ScriptObject
     
     public string Bold(string text) => $"<b>{text}</b>";
     
-    public async Task<string> Mention(Guid guid, string name)
+    public async Task<string> Mention(string guid, string name)
     {
-        var tgId = await _membersStorage.GetTelegramId(guid);
+        var tgId = await _membersStorage.GetTelegramId(Guid.Parse(guid));
 
         return tgId.HasValue
             ? $"<a href=\"tg://user?id={tgId.Value}\">{name}</a>"

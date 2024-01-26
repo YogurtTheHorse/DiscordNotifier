@@ -31,7 +31,7 @@ public class MembersStorage
         return await GetMemberById(id);
     }
 
-    private async Task<MemberInfo?> GetMemberById(Guid id)
+    public async Task<MemberInfo?> GetMemberById(Guid id)
     {
         // get member info from redis and hashset
         var db = _redis.GetDatabase();
