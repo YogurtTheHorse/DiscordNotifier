@@ -36,6 +36,7 @@ builder.Services.AddSingleton<ICommandListener, RemoveRoleCommand>();
 builder.Services.AddSingleton<MembersStorage>();
 builder.Services.AddSingleton<ChatsRegistry>();
 builder.Services.AddSingleton<PermissionsManager>();
+builder.Services.AddSingleton<CommandExecutor>();
 
 #endregion
 

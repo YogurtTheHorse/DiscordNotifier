@@ -1,4 +1,5 @@
 using YogurtTheCommunity.Abstractions;
+using YogurtTheCommunity.Utils;
 
 namespace YogurtTheCommunity.Commands.DefaultCommands;
 
@@ -24,22 +25,24 @@ public class InfoCommand : ICommandListener
     public async Task Execute(CommandContext commandContext)
     {
         var member = commandContext.ReplyTo ?? commandContext.MemberInfo;
-
         var baseInfo =
-            $"Id: {member.Id}\n"
-            + $"Name: {member.Name}\n"
-            + $"Roles: {string.Join(", ", member.Roles)}";
-        
+            $"{{{{bold \"Id\"}}}}: {member.Id}\n"
+            + $"{{{{bold \"Name\"}}}}: {member.Name.Escape()}\n"
+            + $"{{{{bold \"Roles\"}}}}: {string.Join(", ", member.Roles)}";
+
         var info = (await Task.WhenAll(
             _infoProviders
                 .Select(async x =>
                 {
                     var values = await x.GetInfo(member.Id);
 
-                    return string.Join("\n", values.Select(v => $"{v.Key}: {v.Value}"));
+                    return string.Join(
+                        "\n",
+                        values.Select(v => $"{{{{bold \"{v.Key.Escape()}\"}}}}: {v.Value}")
+                    );
                 })
-            )).Where(x => !string.IsNullOrEmpty(x));
-        
+        )).Where(x => !string.IsNullOrEmpty(x));
+
         await commandContext.Reply($"{baseInfo}\n\n{string.Join("\n\n", info)}");
     }
 }

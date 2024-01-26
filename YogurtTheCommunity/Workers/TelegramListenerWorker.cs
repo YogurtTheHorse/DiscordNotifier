@@ -1,10 +1,10 @@
+using Scriban;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using YogurtTheCommunity.Abstractions;
 using YogurtTheCommunity.Commands;
-using YogurtTheCommunity.Data;
 using YogurtTheCommunity.Services;
 using YogurtTheCommunity.Utils;
 
@@ -15,7 +15,7 @@ public class TelegramListenerWorker : BackgroundService
     private readonly ITelegramBotClient _botClient;
 
     private readonly MembersStorage _membersStorage;
-    private readonly PermissionsManager _permissionsManager;
+    private readonly CommandExecutor _commandExecutor;
 
     private readonly ICommandListener[] _commandListeners;
     private readonly IEnumerable<ITelegramUpdateListener> _updateListeners;
@@ -27,14 +27,14 @@ public class TelegramListenerWorker : BackgroundService
         IEnumerable<ICommandListener> commandListeners,
         IEnumerable<ITelegramUpdateListener> updateListeners,
         MembersStorage membersStorage,
-        PermissionsManager permissionsManager,
+        CommandExecutor commandExecutor,
         ILogger<TelegramListenerWorker> logger
     )
     {
         _botClient = botClient;
         _updateListeners = updateListeners;
         _membersStorage = membersStorage;
-        _permissionsManager = permissionsManager;
+        _commandExecutor = commandExecutor;
         _logger = logger;
         _commandListeners = commandListeners.ToArray();
     }
@@ -113,25 +113,7 @@ public class TelegramListenerWorker : BackgroundService
 
         var commandContext = await GetCommandContext(message, commandListener);
 
-        // todo: create command executor
-
-        if (!_permissionsManager.HasPermissions(commandContext.MemberInfo, commandListener.RequiredPermissions))
-        {
-            var roles = string.Join(", ", commandListener.RequiredPermissions);
-            await commandContext.Reply($"You don't have permissions to execute this command ({roles})");
-
-            return;
-        }
-
-        try
-        {
-            await commandListener.Execute(commandContext);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error executing command {command}", commandListener.Command);
-            await commandContext.Reply($"Error executing command: {ex.Message}");
-        }
+        await _commandExecutor.Execute(commandListener, commandContext);
     }
 
     private async Task<CommandContext> GetCommandContext(Message message, ICommandListener commandListener)
@@ -146,15 +128,55 @@ public class TelegramListenerWorker : BackgroundService
 
         return new CommandContext(
             arguments,
-            async text => await _botClient.SendTextMessageAsync(message.Chat.Id, text),
+            Reply,
             await _membersStorage.GetOrCreate(message.From!),
             message.ReplyToMessage is { From: { } replyTo } ? await _membersStorage.GetOrCreate(replyTo) : null,
             message.Chat.Id.ToString()
         );
+
+        async Task Reply(string text)
+        {
+            var context = GetParserContext();
+            var template = Template.Parse(text);
+
+            string? result;
+
+            try
+            {
+                result = await template.RenderAsync(context);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rendering template");
+
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(result))
+            {
+                await _botClient.SendTextMessageAsync(
+                    message.Chat.Id,
+                    result,
+                    parseMode: ParseMode.Html
+                );
+            }
+        }
     }
 
-    private static void ParseArguments(string text, ICommandListener commandListener, int argsStart,
-        Dictionary<CommandArgument, string> arguments)
+    private TemplateContext GetParserContext()
+    {
+        var messageFunctions = new TelegramMessageFunctions(_membersStorage);
+        var context = new TemplateContext(messageFunctions);
+
+        return context;
+    }
+
+    private static void ParseArguments(
+        string text,
+        ICommandListener commandListener,
+        int argsStart,
+        Dictionary<CommandArgument, string> arguments
+    )
     {
         var currentArgumentStart = argsStart + 1;
 
