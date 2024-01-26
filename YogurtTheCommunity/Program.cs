@@ -13,6 +13,7 @@ using YogurtTheCommunity.DiscordNotifier.Services;
 using YogurtTheCommunity.DiscordNotifier.Workers;
 using YogurtTheCommunity.JoinsManager;
 using YogurtTheCommunity.Services;
+using YogurtTheCommunity.Subscriptions;
 using YogurtTheCommunity.TitleGiver;
 using YogurtTheCommunity.Workers;
 
@@ -73,6 +74,16 @@ builder.Services.AddSingleton<TitlesStorage>();
 builder.Services.AddSingleton<ITelegramUpdateListener, JoinListener>();
 builder.Services.AddSingleton<ICommandListener, ApproveCommand>();
 builder.Services.AddSingleton<JoinsStorage>();
+
+#endregion
+
+#region Notify
+
+builder.Services.AddSingleton<ICommandListener, NotifyCommand>();
+builder.Services.AddSingleton<ICommandListener, SubscribeCommand>();
+builder.Services.AddSingleton<ICommandListener, UnSubscribeCommand>();
+builder.Services.AddSingleton<SubscriptionsStorage>();
+builder.Services.AddSingleton<IInfoProvider, UserSubscriptionsInfo>();
 
 #endregion
 
