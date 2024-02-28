@@ -33,6 +33,8 @@ builder.Services.AddSingleton<ICommandListener, SetNameCommand>();
 builder.Services.AddSingleton<ICommandListener, AddRoleCommand>();
 builder.Services.AddSingleton<ICommandListener, RegisterChat>();
 builder.Services.AddSingleton<ICommandListener, RemoveRoleCommand>();
+builder.Services.AddSingleton<ICommandListener, PinCommand>();
+builder.Services.AddSingleton<ICommandListener, UnPinCommand>();
 
 builder.Services.AddSingleton<MembersStorage>();
 builder.Services.AddSingleton<ChatsRegistry>();

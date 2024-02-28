@@ -10,11 +10,13 @@ public class CommandContext
 
     public MemberInfo MemberInfo { get; }
 
-    public MemberInfo? ReplyTo { get; }
-
     public string ChatId { get; }
 
-    public CommandContext(Dictionary<CommandArgument, string> argumentValues, Func<string, Task> reply, MemberInfo memberInfo, MemberInfo? replyTo, string chatId)
+    public MemberInfo? ReplyTo { get; }
+    
+    public string? ReplyToMessageId { get; } // todo: fix that shit and make it abstract...
+
+    public CommandContext(Dictionary<CommandArgument, string> argumentValues, Func<string, Task> reply, MemberInfo memberInfo, MemberInfo? replyTo, string chatId, string? replyToMessageId)
     {
         _argumentValues = argumentValues;
         
@@ -22,6 +24,7 @@ public class CommandContext
         MemberInfo = memberInfo;
         ReplyTo = replyTo;
         ChatId = chatId;
+        ReplyToMessageId = replyToMessageId;
     }
 
     public string GetArgument(CommandArgument argument) =>

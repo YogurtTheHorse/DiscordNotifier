@@ -131,7 +131,8 @@ public class TelegramListenerWorker : BackgroundService
             Reply,
             await _membersStorage.GetOrCreate(message.From!),
             message.ReplyToMessage is { From: { } replyTo } ? await _membersStorage.GetOrCreate(replyTo) : null,
-            message.Chat.Id.ToString()
+            message.Chat.Id.ToString(),
+            message.ReplyToMessage is { MessageId: var id } ? id.ToString() : null
         );
 
         async Task Reply(string text)
