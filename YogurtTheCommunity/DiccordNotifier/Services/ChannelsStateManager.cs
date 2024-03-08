@@ -43,7 +43,8 @@ public class ChannelsStateManager
             ? string.Join("\n", voiceChannel.ConnectedUsers.Select(UserToText).ToArray())
             : "Nobody here anymore...";
 
-        var stateMessage = $"<b>{voiceChannel.Name}</b> {tags}\n\n{users}";
+        var channelStatus = voiceChannel.Status is null ? string.Empty : "\n" + voiceChannel.Status;
+        var stateMessage = $"<b>{voiceChannel.Name}</b> {tags}{channelStatus}\n\n{users}";
 
         var messageId = await _messagesDataStorage.GetChannelStateMessage(channelId);
 

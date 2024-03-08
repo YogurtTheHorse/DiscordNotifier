@@ -36,6 +36,7 @@ public class DiscordWorker : BackgroundService
         }
         
         _discordSocketClient.Log += Log;
+        _discordSocketClient.VoiceChannelStatusUpdated += OnUserVoiceStateUpdated;
         _discordSocketClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
 
         await _discordSocketClient.LoginAsync(TokenType.Bot, _notifierOptions.Value.Token);
@@ -45,6 +46,7 @@ public class DiscordWorker : BackgroundService
 
         await _discordSocketClient.StopAsync();
         _discordSocketClient.UserVoiceStateUpdated -= OnUserVoiceStateUpdated;
+        _discordSocketClient.VoiceChannelStatusUpdated -= OnUserVoiceStateUpdated;
         _discordSocketClient.Log -= Log;
     }
 
@@ -53,6 +55,15 @@ public class DiscordWorker : BackgroundService
         _logger.LogInformation("{msg}", msg);
 
         return Task.CompletedTask;
+    }
+
+    private async Task OnUserVoiceStateUpdated(Cacheable<SocketVoiceChannel, ulong> cacheable, string oldStatus, string newStatus)
+    {
+        var voiceChannel = await cacheable.GetOrDownloadAsync();
+        
+        if (voiceChannel == null) return;
+
+        await _channelsStateManager.UpdateChannelInfo(voiceChannel);
     }
 
     private async Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState beforeState, SocketVoiceState afterState)
