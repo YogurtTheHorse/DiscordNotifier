@@ -22,6 +22,7 @@ public class TitleJoinListener : ITelegramUpdateListener
     public async Task OnUpdate(ITelegramBotClient client, Update update, CancellationToken cts)
     {
         if (update is not { ChatMember: { Chat: { } chat, NewChatMember: { User: { } newChatMember , Status: ChatMemberStatus.Member} }}) return;
+        if (chat.Type == ChatType.Channel) return;
 
         var member = await _membersStorage.GetMemberByTelegramId(newChatMember.Id);
         
