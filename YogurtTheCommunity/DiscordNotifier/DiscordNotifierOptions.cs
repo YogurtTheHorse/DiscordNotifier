@@ -13,4 +13,6 @@ public class DiscordNotifierOptions
     public float WaitBeforeStatusDelete { get; set; } = 60;
     
     public long TelegramTargetId { get; set; }
+
+    public int? TelegramThreadId { get; set; } = null;
 }
