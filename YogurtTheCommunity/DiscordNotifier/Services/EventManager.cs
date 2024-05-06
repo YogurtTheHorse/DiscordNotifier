@@ -13,6 +13,7 @@ public class EventManager
     private readonly ITelegramBotClient _telegramBotClient;
 
     private long ChatId => _notifierOptions.Value.TelegramTargetId;
+    private int? ThreadId => _notifierOptions.Value.TelegramThreadId;
 
     public EventManager(
         IOptions<DiscordNotifierOptions> notifierOptions,
@@ -64,7 +65,8 @@ public class EventManager
             await _telegramBotClient.SendTextMessageAsync(
                 ChatId,
                 $"<b>{user.Username}</b> started streaming inside <b>{voiceChannel.Name}</b>",
-                parseMode: ParseMode.Html
+                parseMode: ParseMode.Html,
+                messageThreadId: ThreadId
             );
         }
     }

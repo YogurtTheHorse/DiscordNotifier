@@ -1,18 +1,12 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime:7.0 AS base
-WORKDIR /app
+﻿FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build-env
+WORKDIR /YogurtTheCommunity
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
-WORKDIR /src
-COPY ["DiscordNotifier/DiscordNotifier.csproj", "DiscordNotifier/"]
-RUN dotnet restore "YogurtTheCommunity/DiscordNotifier.csproj"
-COPY . .
-WORKDIR "/src/YogurtTheCommunity"
-RUN dotnet build "YogurtTheCommunity.csproj" -c Release -o /app/build
+COPY . ./
+RUN dotnet restore
+RUN dotnet build -c Release -o build
+RUN dotnet publish -c Release -o out /p:UseAppHost=false
 
-FROM build AS publish
-RUN dotnet publish "YogurtTheCommunity.csproj" -c Release -o /app/publish /p:UseAppHost=false
-
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
+FROM mcr.microsoft.com/dotnet/aspnet:7.0
+WORKDIR /YogurtTheCommunity
+COPY --from=build-env /YogurtTheCommunity/out .
 ENTRYPOINT ["dotnet", "YogurtTheCommunity.dll"]
