@@ -18,6 +18,8 @@ public class ChannelsStateManager
 
     private int? ThreadId => _notifierOptions.Value.TelegramThreadId;
 
+    private bool NeedToPinMessage => _notifierOptions.Value.NeedToPinMessage;
+
     public ChannelsStateManager(
         ITelegramBotClient botClient,
         IOptions<DiscordNotifierOptions> notifierOptions,
@@ -87,7 +89,11 @@ public class ChannelsStateManager
             var message = await _botClient.SendTextMessageAsync(ChatId, stateMessage, parseMode: ParseMode.Html, messageThreadId: ThreadId);
 
             await _messagesDataStorage.SetChannelStateMessage(channelId, message.MessageId);
-            await _botClient.PinChatMessageAsync(ChatId, message.MessageId);
+
+            if (NeedToPinMessage)
+            {
+                await _botClient.PinChatMessageAsync(ChatId, message.MessageId);
+            }
         }
     }
 
