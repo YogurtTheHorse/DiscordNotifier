@@ -33,7 +33,6 @@ public class MembersStorage
 
     public async Task<MemberInfo?> GetMemberById(Guid id)
     {
-        // get member info from redis and hashset
         var db = _redis.GetDatabase();
 
         var memberInfo = await db.HashGetAllAsync($"community:members:{id}");
@@ -51,12 +50,43 @@ public class MembersStorage
         );
     }
 
+    public async Task<ExtraMemberInfo> GetExtraInfo(Guid id)
+    {
+        var db = _redis.GetDatabase();
+
+        var extraInfoEntries = await db.HashGetAllAsync($"community:members:{id}:extra");
+
+        return new ExtraMemberInfo(
+            GetValue(nameof(ExtraMemberInfo.Description))?.ToString() ?? string.Empty
+        );
+        
+        RedisValue? GetValue(string key)
+        {
+            var entry = extraInfoEntries.FirstOrDefault(e => e.Name == key);
+            return entry.Value.IsNullOrEmpty
+                ? (RedisValue?)null
+                : entry.Value;
+        }
+    }
+    
+    public async Task SetExtraInfo(Guid id, ExtraMemberInfo extraInfo)
+    {
+        var db = _redis.GetDatabase();
+
+        await db.HashSetAsync($"community:members:{id}:extra",
+            new[]
+            {
+                new HashEntry(nameof(ExtraMemberInfo.Description), extraInfo.Description)
+            });
+    }
+
     public async Task SetName(Guid id, string name)
     {
         var db = _redis.GetDatabase();
 
         await db.HashSetAsync($"community:members:{id}",
-            new[] {
+            new[]
+            {
                 new HashEntry(NameField, name)
             });
     }
@@ -77,7 +107,8 @@ public class MembersStorage
 
     public async Task<long?> GetTelegramId(Guid id)
     {
-        var defaultId = _membersDefaultOptions.Value.TelegramDefaultIds.FirstOrDefault(x => x.Value.DefaultId == id).Key;
+        var defaultId = _membersDefaultOptions.Value.TelegramDefaultIds.FirstOrDefault(x => x.Value.DefaultId == id)
+            .Key;
 
         if (defaultId != 0)
         {
@@ -124,7 +155,8 @@ public class MembersStorage
         var db = _redis.GetDatabase();
 
         await db.HashSetAsync($"community:members:{id}",
-            new[] {
+            new[]
+            {
                 new HashEntry(NameField, name), new HashEntry(TelegramIdField, telegramId)
             });
         await db.SetAddAsync($"community:members:{id}:roles", roles.Select(r => (RedisValue)r).ToArray());

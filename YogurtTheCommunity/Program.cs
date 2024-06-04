@@ -12,6 +12,7 @@ using YogurtTheCommunity.Commands.DefaultCommands;
 using YogurtTheCommunity.DiscordNotifier.Services;
 using YogurtTheCommunity.DiscordNotifier.Workers;
 using YogurtTheCommunity.JoinsManager;
+using YogurtTheCommunity.Scopes.ExtraInfo;
 using YogurtTheCommunity.Services;
 using YogurtTheCommunity.Subscriptions;
 using YogurtTheCommunity.TitleGiver;
@@ -40,6 +41,13 @@ builder.Services.AddSingleton<MembersStorage>();
 builder.Services.AddSingleton<ChatsRegistry>();
 builder.Services.AddSingleton<PermissionsManager>();
 builder.Services.AddSingleton<CommandExecutor>();
+
+#endregion
+
+#region Extra info
+
+builder.Services.AddSingleton<ICommandListener, SetDescriptionCommand>();
+builder.Services.AddSingleton<IInfoProvider, ExtraInfoProvider>();
 
 #endregion
 
