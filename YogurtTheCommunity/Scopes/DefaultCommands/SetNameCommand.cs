@@ -2,10 +2,8 @@ using YogurtTheCommunity.Services;
 
 namespace YogurtTheCommunity.Commands.DefaultCommands;
 
-public class SetNameCommand : ICommandListener
+public class SetNameCommand(MembersStorage members) : ICommandListener
 {
-    private readonly MembersStorage _members;
-
     public string Command => "setName";
 
     public string Description => "sets member name in system";
@@ -18,11 +16,6 @@ public class SetNameCommand : ICommandListener
         new CommandArgument("name", string.Empty, ArgumentType.Filler)
     };
 
-    public SetNameCommand(MembersStorage members)
-    {
-        _members = members;
-    }
-
     public async Task Execute(CommandContext commandContext)
     {
         if (string.IsNullOrEmpty(commandContext.GetArgument(Arguments[0])))
@@ -32,7 +25,7 @@ public class SetNameCommand : ICommandListener
             return;
         }
 
-        await _members.SetName(commandContext.MemberInfo.Id, commandContext.GetArgument(Arguments[0]));
+        await members.SetName(commandContext.MemberInfo.Id, commandContext.GetArgument(Arguments[0]));
         await commandContext.Reply("Ok");
     }
 }

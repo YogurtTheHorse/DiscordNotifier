@@ -6,6 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-DiscordNotifier-DDB84382-0DC2-4D0F-97B7-8225FE6DCDCD</UserSecretsId>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <LangVersion>12</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

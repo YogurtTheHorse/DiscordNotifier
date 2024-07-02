@@ -2,10 +2,8 @@ using YogurtTheCommunity.Services;
 
 namespace YogurtTheCommunity.Commands.DefaultCommands;
 
-public class RemoveRoleCommand : ICommandListener
+public class RemoveRoleCommand(MembersStorage members) : ICommandListener
 {
-    private readonly MembersStorage _members;
-
     public string Command => "removeRole";
 
     public string Description => "removes role from user";
@@ -18,11 +16,6 @@ public class RemoveRoleCommand : ICommandListener
         "roles.edit"
     };
 
-    public RemoveRoleCommand(MembersStorage members)
-    {
-        _members = members;
-    }
-
     public async Task Execute(CommandContext commandContext)
     {
         var member = commandContext.ReplyTo ?? commandContext.MemberInfo;
@@ -32,7 +25,7 @@ public class RemoveRoleCommand : ICommandListener
             await commandContext.Reply("Invalid role");
         }
 
-        await _members.RemoveRole(member.Id, commandContext.GetArgument(Arguments[0]));
+        await members.RemoveRole(member.Id, commandContext.GetArgument(Arguments[0]));
         await commandContext.Reply("Ok");
     }
 }

@@ -2,15 +2,8 @@ using StackExchange.Redis;
 
 namespace YogurtTheCommunity.DiscordNotifier.Services;
 
-public class TimingsManager
+public class TimingsManager(IConnectionMultiplexer redis)
 {
-    private readonly IConnectionMultiplexer _redis;
-
-    public TimingsManager(IConnectionMultiplexer redis)
-    {
-        _redis = redis;
-    }
-
     public async Task<DateTime> GetLastReportedJoinTime(ulong userId) => await GetTiming(userId, "joined");
 
     public async Task SetLastReportedJoinTime(ulong userId, DateTime time) => await SetLastTiming(userId, "joined", time);
@@ -21,7 +14,7 @@ public class TimingsManager
 
     private async Task<DateTime> GetTiming(ulong userId, string name)
     {
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         var val = await db.StringGetAsync($"community:discord-notifier:timings:{userId}:{name}");
 
@@ -32,7 +25,7 @@ public class TimingsManager
 
     public async Task SetLastTiming(ulong userId, string name, DateTime time)
     {
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         await db.StringSetAsync($"community:discord-notifier:timings:{userId}:{name}", time.Ticks);
     }

@@ -4,17 +4,10 @@ using YogurtTheCommunity.Options;
 
 namespace YogurtTheCommunity.Services;
 
-public class PermissionsManager
+public class PermissionsManager(IOptions<PermissionsOptions> permissionsOptions)
 {
-    private readonly IOptions<PermissionsOptions> _permissionsOptions;
-
-    public PermissionsManager(IOptions<PermissionsOptions> permissionsOptions)
-    {
-        _permissionsOptions = permissionsOptions;
-    }
-    
     public string[] GetRolePermissions(string role) =>
-        _permissionsOptions.Value.RolesPermissions.TryGetValue(role, out var permissions)
+        permissionsOptions.Value.RolesPermissions.TryGetValue(role, out var permissions)
             ? permissions
             : Array.Empty<string>();
 

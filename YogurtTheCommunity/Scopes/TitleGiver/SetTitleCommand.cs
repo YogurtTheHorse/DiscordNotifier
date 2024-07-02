@@ -1,15 +1,9 @@
-using Telegram.Bot;
-using Telegram.Bot.Exceptions;
 using YogurtTheCommunity.Commands;
-using YogurtTheCommunity.Services;
 
 namespace YogurtTheCommunity.TitleGiver;
 
-public class SetTitleCommand : ICommandListener
+public class SetTitleCommand(TitlesStorage titlesStorage, TitlesManager titlesManager) : ICommandListener
 {
-    private readonly TitlesStorage _titlesStorage;
-    private readonly TitlesManager _titlesManager;
-
     public string Command => "setTitle";
 
     public string Description => "Sets chat title of user";
@@ -21,12 +15,6 @@ public class SetTitleCommand : ICommandListener
     public IList<CommandArgument> Arguments { get; } = new[] {
         new CommandArgument("title", string.Empty, ArgumentType.Filler)
     };
-
-    public SetTitleCommand(TitlesStorage titlesStorage, TitlesManager titlesManager)
-    {
-        _titlesStorage = titlesStorage;
-        _titlesManager = titlesManager;
-    }
 
     public async Task Execute(CommandContext commandContext)
     {
@@ -40,9 +28,9 @@ public class SetTitleCommand : ICommandListener
         }
 
 
-        await _titlesStorage.SetTitle(memberInfo.Id, title);
+        await titlesStorage.SetTitle(memberInfo.Id, title);
 
-        var res = await _titlesManager.UpdateTitle(memberInfo.Id, title);
+        var res = await titlesManager.UpdateTitle(memberInfo.Id, title);
 
         await commandContext.Reply(res ? "Done" : "Error");
     }

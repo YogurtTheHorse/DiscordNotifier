@@ -3,10 +3,8 @@ using YogurtTheCommunity.Services;
 
 namespace YogurtTheCommunity.Scopes.ExtraInfo;
 
-public class SetDescriptionCommand : ICommandListener
+public class SetDescriptionCommand(MembersStorage members) : ICommandListener
 {
-    private readonly MembersStorage _members;
-
     public string Command => "setDescription";
 
     public string Description => "sets member description";
@@ -21,8 +19,6 @@ public class SetDescriptionCommand : ICommandListener
         new CommandArgument("description", string.Empty, ArgumentType.Filler)
     };
 
-    public SetDescriptionCommand(MembersStorage members) => _members = members;
-
     public async Task Execute(CommandContext commandContext)
     {
         if (string.IsNullOrEmpty(commandContext.GetArgument(Arguments[0])))
@@ -33,12 +29,12 @@ public class SetDescriptionCommand : ICommandListener
         }
 
         // extremely unoptimal
-        var extraInfo = await _members.GetExtraInfo(commandContext.MemberInfo.Id) with
+        var extraInfo = await members.GetExtraInfo(commandContext.MemberInfo.Id) with
         {
             Description = commandContext.GetArgument(Arguments[0])
         };
 
-        await _members.SetExtraInfo(commandContext.MemberInfo.Id, extraInfo);
+        await members.SetExtraInfo(commandContext.MemberInfo.Id, extraInfo);
         await commandContext.Reply("Ok");
     }
 }

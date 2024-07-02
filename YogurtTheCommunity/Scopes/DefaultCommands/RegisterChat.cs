@@ -3,11 +3,9 @@ using YogurtTheCommunity.Services;
 
 namespace YogurtTheCommunity.Commands.DefaultCommands;
 
-public class RegisterChat : ICommandListener
+public class RegisterChat(ITelegramBotClient telegramBotClient, ChatsRegistry chatsRegistry)
+    : ICommandListener
 {
-    private readonly ITelegramBotClient _telegramBotClient;
-    private readonly ChatsRegistry _chatsRegistry;
-
     public string Command => "registerChat";
 
     public string Description => "saves current chat as managed";
@@ -18,27 +16,21 @@ public class RegisterChat : ICommandListener
         "chats.edit"
     };
 
-    public RegisterChat(ITelegramBotClient telegramBotClient, ChatsRegistry chatsRegistry)
-    {
-        _telegramBotClient = telegramBotClient;
-        _chatsRegistry = chatsRegistry;
-    }
-
     public async Task Execute(CommandContext commandContext)
     {
         // todo: fix telegram-only code
         var chat = long.Parse(commandContext.ChatId);
 
-        var admins = await _telegramBotClient.GetChatAdministratorsAsync(chat);
+        var admins = await telegramBotClient.GetChatAdministratorsAsync(chat);
 
-        if (admins.All(a => a.User.Id != _telegramBotClient.BotId))
+        if (admins.All(a => a.User.Id != telegramBotClient.BotId))
         {
             await commandContext.Reply("Bot is not admin in this chat");
 
             return;
         }
 
-        var registered = await _chatsRegistry.RegisterTelegramChat(chat);
+        var registered = await chatsRegistry.RegisterTelegramChat(chat);
 
         await commandContext.Reply(registered ? "Ok" : "Already registered");
     }

@@ -5,54 +5,40 @@ using YogurtTheCommunity.DiscordNotifier.Services;
 
 namespace YogurtTheCommunity.DiscordNotifier.Workers;
 
-public class DiscordWorker : BackgroundService
+public class DiscordWorker(
+    ILogger<DiscordWorker> logger,
+    EventManager eventManager,
+    DiscordSocketClient discordSocketClient,
+    ChannelsStateManager channelsStateManager,
+    IOptions<DiscordNotifierOptions> notifierOptions)
+    : BackgroundService
 {
-    private readonly ILogger<DiscordWorker> _logger;
-    private readonly EventManager _eventManager;
-    private readonly DiscordSocketClient _discordSocketClient;
-    private readonly ChannelsStateManager _channelsStateManager;
-    private readonly IOptions<DiscordNotifierOptions> _notifierOptions;
-
-    public DiscordWorker(
-        ILogger<DiscordWorker> logger,
-        EventManager eventManager,
-        DiscordSocketClient discordSocketClient,
-        ChannelsStateManager channelsStateManager,
-        IOptions<DiscordNotifierOptions> notifierOptions)
-    {
-        _logger = logger;
-        _eventManager = eventManager;
-        _discordSocketClient = discordSocketClient;
-        _channelsStateManager = channelsStateManager;
-        _notifierOptions = notifierOptions;
-    }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!_notifierOptions.Value.Enabled)
+        if (!notifierOptions.Value.Enabled)
         {
-            _logger.LogInformation("Not enabling DiscordWorker because it's disabled in config");
+            logger.LogInformation("Not enabling DiscordWorker because it's disabled in config");
             return;
         }
         
-        _discordSocketClient.Log += Log;
-        _discordSocketClient.VoiceChannelStatusUpdated += OnUserVoiceStateUpdated;
-        _discordSocketClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
+        discordSocketClient.Log += Log;
+        discordSocketClient.VoiceChannelStatusUpdated += OnUserVoiceStateUpdated;
+        discordSocketClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
 
-        await _discordSocketClient.LoginAsync(TokenType.Bot, _notifierOptions.Value.Token);
-        await _discordSocketClient.StartAsync();
+        await discordSocketClient.LoginAsync(TokenType.Bot, notifierOptions.Value.Token);
+        await discordSocketClient.StartAsync();
 
         await Task.Delay(-1, stoppingToken);
 
-        await _discordSocketClient.StopAsync();
-        _discordSocketClient.UserVoiceStateUpdated -= OnUserVoiceStateUpdated;
-        _discordSocketClient.VoiceChannelStatusUpdated -= OnUserVoiceStateUpdated;
-        _discordSocketClient.Log -= Log;
+        await discordSocketClient.StopAsync();
+        discordSocketClient.UserVoiceStateUpdated -= OnUserVoiceStateUpdated;
+        discordSocketClient.VoiceChannelStatusUpdated -= OnUserVoiceStateUpdated;
+        discordSocketClient.Log -= Log;
     }
 
     private Task Log(LogMessage msg)
     {
-        _logger.LogInformation("{msg}", msg);
+        logger.LogInformation("{msg}", msg);
 
         return Task.CompletedTask;
     }
@@ -63,7 +49,7 @@ public class DiscordWorker : BackgroundService
         
         if (voiceChannel == null) return;
 
-        await _channelsStateManager.UpdateChannelInfo(voiceChannel);
+        await channelsStateManager.UpdateChannelInfo(voiceChannel);
     }
 
     private async Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState beforeState, SocketVoiceState afterState)
@@ -74,12 +60,12 @@ public class DiscordWorker : BackgroundService
                 })
         {
             case { Before.VoiceChannel: null, After.VoiceChannel: { } vc }:
-                await _eventManager.JoinedChannel(user, vc);
+                await eventManager.JoinedChannel(user, vc);
 
                 break;
 
             case { Before.VoiceChannel: { } vc, After.VoiceChannel: null }:
-                await _eventManager.LeftChannel(user, vc);
+                await eventManager.LeftChannel(user, vc);
 
                 break;
 
@@ -91,7 +77,7 @@ public class DiscordWorker : BackgroundService
 
             case { Before.VoiceChannel: { } beforeChannel, After.VoiceChannel: { } afterChannel }
                 when beforeChannel.Id != afterChannel.Id:
-                await _eventManager.UserSwitchedChannel(user, beforeChannel, afterChannel);
+                await eventManager.UserSwitchedChannel(user, beforeChannel, afterChannel);
 
                 break;
         }
@@ -101,15 +87,15 @@ public class DiscordWorker : BackgroundService
     {
         if (beforeState.IsStreaming && !afterState.IsStreaming)
         {
-            await _eventManager.UserStoppedStreaming(user, afterState.VoiceChannel);
+            await eventManager.UserStoppedStreaming(user, afterState.VoiceChannel);
         }
         else if (!beforeState.IsStreaming && afterState.IsStreaming)
         {
-            await _eventManager.UserStartedStreaming(user, afterState.VoiceChannel);
+            await eventManager.UserStartedStreaming(user, afterState.VoiceChannel);
         }
         else // just update state
         {
-            await _channelsStateManager.UpdateChannelInfo(afterState.VoiceChannel);
+            await channelsStateManager.UpdateChannelInfo(afterState.VoiceChannel);
         }
     }
 }

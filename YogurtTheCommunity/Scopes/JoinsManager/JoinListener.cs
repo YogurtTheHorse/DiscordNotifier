@@ -6,23 +6,14 @@ using YogurtTheCommunity.Utils;
 
 namespace YogurtTheCommunity.JoinsManager;
 
-public class JoinListener : ITelegramUpdateListener
+public class JoinListener(JoinsStorage joinsStorage, MembersStorage membersStorage) : ITelegramUpdateListener
 {
-    private readonly JoinsStorage _joinsStorage;
-    private readonly MembersStorage _membersStorage;
-
-    public JoinListener(JoinsStorage joinsStorage, MembersStorage membersStorage)
-    {
-        _joinsStorage = joinsStorage;
-        _membersStorage = membersStorage;
-    }
-    
     public async Task OnUpdate(ITelegramBotClient client, Update update, CancellationToken cts)
     {
         if (update is not { ChatJoinRequest: { Chat: { } chat, From: { } joiner } }) return;
         
-        var member = await _membersStorage.GetOrCreate(joiner);
-        var isApproved = await _joinsStorage.IsApproved(member.Id);
+        var member = await membersStorage.GetOrCreate(joiner);
+        var isApproved = await joinsStorage.IsApproved(member.Id);
 
         if (isApproved)
         {
@@ -30,7 +21,7 @@ public class JoinListener : ITelegramUpdateListener
             return;
         }
 
-        await _joinsStorage.AddJoinRequest(member.Id, chat.Id);
+        await joinsStorage.AddJoinRequest(member.Id, chat.Id);
         await client.SendTextMessageAsync(
             chat.Id,
             $"""

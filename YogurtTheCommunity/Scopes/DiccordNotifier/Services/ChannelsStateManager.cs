@@ -7,26 +7,13 @@ using Telegram.Bot.Types.Enums;
 
 namespace YogurtTheCommunity.DiscordNotifier.Services;
 
-public class ChannelsStateManager
+public class ChannelsStateManager(
+    ITelegramBotClient botClient,
+    IOptions<DiscordNotifierOptions> notifierOptions,
+    IBackgroundJobClient jobs,
+    MessagesDataStorage messagesDataStorage)
 {
-    private readonly ITelegramBotClient _botClient;
-    private readonly IOptions<DiscordNotifierOptions> _notifierOptions;
-    private readonly IBackgroundJobClient _jobs;
-    private readonly MessagesDataStorage _messagesDataStorage;
-
-    private long ChatId => _notifierOptions.Value.TelegramTargetId;
-
-    public ChannelsStateManager(
-        ITelegramBotClient botClient,
-        IOptions<DiscordNotifierOptions> notifierOptions,
-        IBackgroundJobClient jobs,
-        MessagesDataStorage messagesDataStorage)
-    {
-        _botClient = botClient;
-        _notifierOptions = notifierOptions;
-        _jobs = jobs;
-        _messagesDataStorage = messagesDataStorage;
-    }
+    private long ChatId => notifierOptions.Value.TelegramTargetId;
 
     public async Task UpdateChannelInfo(SocketVoiceChannel voiceChannel)
     {
@@ -46,13 +33,13 @@ public class ChannelsStateManager
         var channelStatus = voiceChannel.Status is null ? string.Empty : "\n" + voiceChannel.Status;
         var stateMessage = $"<b>{voiceChannel.Name}</b> {tags}{channelStatus}\n\n{users}";
 
-        var messageId = await _messagesDataStorage.GetChannelStateMessage(channelId);
+        var messageId = await messagesDataStorage.GetChannelStateMessage(channelId);
 
         if (messageId.HasValue)
         {
             try
             {
-                await _botClient.EditMessageTextAsync(ChatId, messageId.Value, stateMessage, parseMode: ParseMode.Html);
+                await botClient.EditMessageTextAsync(ChatId, messageId.Value, stateMessage, parseMode: ParseMode.Html);
             }
             catch (ApiRequestException ex) // we weren't able to edit, so send another one
             {
@@ -72,33 +59,33 @@ public class ChannelsStateManager
         }
         else
         {
-            var jobId = _jobs.Schedule(
+            var jobId = jobs.Schedule(
                 (ChannelsStateManager m) => m.DeleteChannelMessage(channelId),
-                TimeSpan.FromSeconds(_notifierOptions.Value.WaitBeforeStatusDelete)
+                TimeSpan.FromSeconds(notifierOptions.Value.WaitBeforeStatusDelete)
             );
 
-            await _messagesDataStorage.SaveDeleteMessageJobId(channelId, jobId);
+            await messagesDataStorage.SaveDeleteMessageJobId(channelId, jobId);
         }
 
         async Task SendMessage()
         {
-            var message = await _botClient.SendTextMessageAsync(ChatId, stateMessage, parseMode: ParseMode.Html);
+            var message = await botClient.SendTextMessageAsync(ChatId, stateMessage, parseMode: ParseMode.Html);
 
-            await _messagesDataStorage.SetChannelStateMessage(channelId, message.MessageId);
-            await _botClient.PinChatMessageAsync(ChatId, message.MessageId);
+            await messagesDataStorage.SetChannelStateMessage(channelId, message.MessageId);
+            await botClient.PinChatMessageAsync(ChatId, message.MessageId);
         }
     }
 
     public async Task DeleteChannelMessage(ulong channelId)
     {
-        var messageId = await _messagesDataStorage.GetChannelStateMessage(channelId);
+        var messageId = await messagesDataStorage.GetChannelStateMessage(channelId);
 
         if (!messageId.HasValue) return;
 
         try
         {
-            await _botClient.DeleteMessageAsync(ChatId, messageId.Value);
-            await _messagesDataStorage.SetChannelStateMessage(channelId, null);
+            await botClient.DeleteMessageAsync(ChatId, messageId.Value);
+            await messagesDataStorage.SetChannelStateMessage(channelId, null);
         }
         catch
         {
@@ -108,11 +95,11 @@ public class ChannelsStateManager
 
     public async Task CancelChannelMessageDelete(ulong channelId)
     {
-        var jobId = await _messagesDataStorage.GetDeleteMessageJobId(channelId);
+        var jobId = await messagesDataStorage.GetDeleteMessageJobId(channelId);
 
         if (jobId is null) return;
 
-        _jobs.Delete(jobId);
+        jobs.Delete(jobId);
     }
 
     private string UserToText(SocketGuildUser user)

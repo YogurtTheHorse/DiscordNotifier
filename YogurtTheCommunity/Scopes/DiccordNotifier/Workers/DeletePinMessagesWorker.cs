@@ -5,19 +5,12 @@ using YogurtTheCommunity.Abstractions;
 
 namespace YogurtTheCommunity.DiscordNotifier.Workers;
 
-public class DeletePinMessagesWorker : ITelegramUpdateListener
+public class DeletePinMessagesWorker(IOptions<DiscordNotifierOptions> notifierOptions) : ITelegramUpdateListener
 {
-    private readonly IOptions<DiscordNotifierOptions> _notifierOptions;
-
-    public DeletePinMessagesWorker(IOptions<DiscordNotifierOptions> notifierOptions)
-    {
-        _notifierOptions = notifierOptions;
-    }
-
     public async Task OnUpdate(ITelegramBotClient client, Update update, CancellationToken cts)
     {
-        if (update is not { ChannelPost : { Chat.Id: var chatId, PinnedMessage: not null, MessageId: { } messageId } }
-            || chatId != _notifierOptions.Value.TelegramTargetId) return;
+        if (update is not { ChannelPost : { Chat.Id: var chatId, PinnedMessage: not null, MessageId: var messageId } }
+            || chatId != notifierOptions.Value.TelegramTargetId) return;
 
         try
         {

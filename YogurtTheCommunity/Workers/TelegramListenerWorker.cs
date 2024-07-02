@@ -10,38 +10,20 @@ using YogurtTheCommunity.Utils;
 
 namespace YogurtTheCommunity.Workers;
 
-public class TelegramListenerWorker : BackgroundService
+public class TelegramListenerWorker(
+    ITelegramBotClient botClient,
+    IEnumerable<ICommandListener> commandListeners,
+    IEnumerable<ITelegramUpdateListener> updateListeners,
+    MembersStorage membersStorage,
+    CommandExecutor commandExecutor,
+    ILogger<TelegramListenerWorker> logger)
+    : BackgroundService
 {
-    private readonly ITelegramBotClient _botClient;
-
-    private readonly MembersStorage _membersStorage;
-    private readonly CommandExecutor _commandExecutor;
-
-    private readonly ICommandListener[] _commandListeners;
-    private readonly IEnumerable<ITelegramUpdateListener> _updateListeners;
-
-    private readonly ILogger<TelegramListenerWorker> _logger;
-
-    public TelegramListenerWorker(
-        ITelegramBotClient botClient,
-        IEnumerable<ICommandListener> commandListeners,
-        IEnumerable<ITelegramUpdateListener> updateListeners,
-        MembersStorage membersStorage,
-        CommandExecutor commandExecutor,
-        ILogger<TelegramListenerWorker> logger
-    )
-    {
-        _botClient = botClient;
-        _updateListeners = updateListeners;
-        _membersStorage = membersStorage;
-        _commandExecutor = commandExecutor;
-        _logger = logger;
-        _commandListeners = commandListeners.ToArray();
-    }
+    private readonly ICommandListener[] _commandListeners = commandListeners.ToArray();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _botClient.StartReceiving(
+        botClient.StartReceiving(
             OnUpdate,
             OnPollingError,
             new ReceiverOptions {
@@ -60,7 +42,7 @@ public class TelegramListenerWorker : BackgroundService
             })
             .ToArray();
 
-        await _botClient.SetMyCommandsAsync(
+        await botClient.SetMyCommandsAsync(
             commands,
             cancellationToken: stoppingToken
         );
@@ -68,7 +50,7 @@ public class TelegramListenerWorker : BackgroundService
 
     private Task OnPollingError(ITelegramBotClient client, Exception exception, CancellationToken cts)
     {
-        _logger.LogError(exception, "Telegram polling error");
+        logger.LogError(exception, "Telegram polling error");
 
         return Task.CompletedTask;
     }
@@ -77,7 +59,7 @@ public class TelegramListenerWorker : BackgroundService
     {
         await InternalUpdateProcess(update, cts);
 
-        foreach (var listener in _updateListeners)
+        foreach (var listener in updateListeners)
         {
             try
             {
@@ -85,7 +67,7 @@ public class TelegramListenerWorker : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in update listener {listener}", listener.GetType().Name);
+                logger.LogError(ex, "Error in update listener {listener}", listener.GetType().Name);
             }
         }
     }
@@ -113,7 +95,7 @@ public class TelegramListenerWorker : BackgroundService
 
         var commandContext = await GetCommandContext(message, commandListener);
 
-        await _commandExecutor.Execute(commandListener, commandContext);
+        await commandExecutor.Execute(commandListener, commandContext);
     }
 
     private async Task<CommandContext> GetCommandContext(Message message, ICommandListener commandListener)
@@ -129,8 +111,8 @@ public class TelegramListenerWorker : BackgroundService
         return new CommandContext(
             arguments,
             Reply,
-            await _membersStorage.GetOrCreate(message.From!),
-            message.ReplyToMessage is { From: { } replyTo } ? await _membersStorage.GetOrCreate(replyTo) : null,
+            await membersStorage.GetOrCreate(message.From!),
+            message.ReplyToMessage is { From: { } replyTo } ? await membersStorage.GetOrCreate(replyTo) : null,
             message.Chat.Id.ToString(),
             message.ReplyToMessage is { MessageId: var id } ? id.ToString() : null
         );
@@ -148,14 +130,14 @@ public class TelegramListenerWorker : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error rendering template");
+                logger.LogError(ex, "Error rendering template");
 
                 return;
             }
 
             if (!string.IsNullOrEmpty(result))
             {
-                await _botClient.SendTextMessageAsync(
+                await botClient.SendTextMessageAsync(
                     message.Chat.Id,
                     result,
                     parseMode: ParseMode.Html
@@ -166,7 +148,7 @@ public class TelegramListenerWorker : BackgroundService
 
     private TemplateContext GetParserContext()
     {
-        var messageFunctions = new TelegramMessageFunctions(_membersStorage);
+        var messageFunctions = new TelegramMessageFunctions(membersStorage);
         var context = new TemplateContext(messageFunctions);
 
         return context;

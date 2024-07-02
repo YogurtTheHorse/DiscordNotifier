@@ -4,11 +4,9 @@ using YogurtTheCommunity.Utils;
 
 namespace YogurtTheCommunity.Subscriptions;
 
-public class NotifyCommand : ICommandListener
+public class NotifyCommand(SubscriptionsStorage subscriptionsStorage, MembersStorage membersStorage)
+    : ICommandListener
 {
-    private readonly SubscriptionsStorage _subscriptionsStorage;
-    private readonly MembersStorage _membersStorage;
-
     public string Command => "notify";
 
     public string Description => "notifies everyone from subscription";
@@ -16,12 +14,6 @@ public class NotifyCommand : ICommandListener
     public IList<CommandArgument> Arguments { get; } = new[] {
         new CommandArgument("subscription", string.Empty, ArgumentType.Filler)
     };
-
-    public NotifyCommand(SubscriptionsStorage subscriptionsStorage, MembersStorage membersStorage)
-    {
-        _subscriptionsStorage = subscriptionsStorage;
-        _membersStorage = membersStorage;
-    }
 
     public async Task Execute(CommandContext commandContext)
     {
@@ -34,8 +26,8 @@ public class NotifyCommand : ICommandListener
             return;
         }
 
-        var subscribers = await _subscriptionsStorage.GetSubscribers(subscription);
-        var members = await Task.WhenAll(subscribers.Select(_membersStorage.GetMemberById));
+        var subscribers = await subscriptionsStorage.GetSubscribers(subscription);
+        var members = await Task.WhenAll(subscribers.Select(membersStorage.GetMemberById));
         var subscribersStrings = members
             .Where(m => m is not null)
             .Select(m => $"{{{{ mention \"{m!.Id}\" \"{m.Name.Escape()}\" }}}}")

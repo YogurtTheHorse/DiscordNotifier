@@ -3,10 +3,8 @@ using YogurtTheCommunity.Utils;
 
 namespace YogurtTheCommunity.Commands.DefaultCommands;
 
-public class PinCommand : ICommandListener
+public class PinCommand(ITelegramBotClient telegramBotClient) : ICommandListener
 {
-    private readonly ITelegramBotClient _telegramBotClient;
-
     public string Command => "pin";
 
     public string Description => "pins message";
@@ -18,11 +16,6 @@ public class PinCommand : ICommandListener
     public IList<CommandArgument> Arguments { get; } = new[] {
         new CommandArgument("notify", "false")
     };
-
-    public PinCommand(ITelegramBotClient telegramBotClient)
-    {
-        _telegramBotClient = telegramBotClient;
-    }
 
     public async Task Execute(CommandContext commandContext)
     {
@@ -36,6 +29,6 @@ public class PinCommand : ICommandListener
         var messageId = int.Parse(commandContext.ReplyToMessageId);
         var notify = commandContext.GetArgument(Arguments[0]).AsBool() ?? false;
 
-        await _telegramBotClient.PinChatMessageAsync(chat, messageId, notify);
+        await telegramBotClient.PinChatMessageAsync(chat, messageId, notify);
     }
 }

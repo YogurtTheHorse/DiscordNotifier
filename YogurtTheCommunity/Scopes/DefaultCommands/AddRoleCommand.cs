@@ -2,10 +2,8 @@ using YogurtTheCommunity.Services;
 
 namespace YogurtTheCommunity.Commands.DefaultCommands;
 
-public class AddRoleCommand : ICommandListener
+public class AddRoleCommand(MembersStorage members) : ICommandListener
 {
-    private readonly MembersStorage _members;
-
     public string Command => "addRole";
 
     public string Description => "adds role to user";
@@ -18,11 +16,6 @@ public class AddRoleCommand : ICommandListener
         "roles.edit"
     };
 
-    public AddRoleCommand(MembersStorage members)
-    {
-        _members = members;
-    }
-
     public async Task Execute(CommandContext commandContext)
     {
         var member = commandContext.ReplyTo ?? commandContext.MemberInfo;
@@ -32,7 +25,7 @@ public class AddRoleCommand : ICommandListener
             await commandContext.Reply("Invalid role");
         }
 
-        await _members.AddRole(member.Id, commandContext.GetArgument(Arguments[0]));
+        await members.AddRole(member.Id, commandContext.GetArgument(Arguments[0]));
         await commandContext.Reply("Ok");
     }
 }

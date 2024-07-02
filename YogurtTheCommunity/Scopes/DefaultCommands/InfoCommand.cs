@@ -3,10 +3,8 @@ using YogurtTheCommunity.Utils;
 
 namespace YogurtTheCommunity.Commands.DefaultCommands;
 
-public class InfoCommand : ICommandListener
+public class InfoCommand(IEnumerable<IInfoProvider> infoProviders) : ICommandListener
 {
-    private readonly IEnumerable<IInfoProvider> _infoProviders;
-
     public string Command => "info";
 
     public string Description => "sends info about user";
@@ -17,11 +15,6 @@ public class InfoCommand : ICommandListener
 
     public IList<CommandArgument> Arguments => Array.Empty<CommandArgument>();
 
-    public InfoCommand(IEnumerable<IInfoProvider> infoProviders)
-    {
-        _infoProviders = infoProviders;
-    }
-
     public async Task Execute(CommandContext commandContext)
     {
         var member = commandContext.ReplyTo ?? commandContext.MemberInfo;
@@ -31,7 +24,7 @@ public class InfoCommand : ICommandListener
             + $"{{{{bold \"Roles\"}}}}: {string.Join(", ", member.Roles)}";
 
         var info = (await Task.WhenAll(
-            _infoProviders
+            infoProviders
                 .Select(async x =>
                 {
                     var values = await x.GetInfo(member.Id);

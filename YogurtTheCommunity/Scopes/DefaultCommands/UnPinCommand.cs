@@ -1,12 +1,9 @@
 using Telegram.Bot;
-using YogurtTheCommunity.Utils;
 
 namespace YogurtTheCommunity.Commands.DefaultCommands;
 
-public class UnPinCommand : ICommandListener
+public class UnPinCommand(ITelegramBotClient telegramBotClient) : ICommandListener
 {
-    private readonly ITelegramBotClient _telegramBotClient;
-
     public string Command => "unpin";
 
     public string Description => "unpins message";
@@ -16,11 +13,6 @@ public class UnPinCommand : ICommandListener
     };
 
     public IList<CommandArgument> Arguments => Array.Empty<CommandArgument>();
-
-    public UnPinCommand(ITelegramBotClient telegramBotClient)
-    {
-        _telegramBotClient = telegramBotClient;
-    }
 
     public async Task Execute(CommandContext commandContext)
     {
@@ -33,6 +25,6 @@ public class UnPinCommand : ICommandListener
         var chat = long.Parse(commandContext.ChatId);
         var messageId = int.Parse(commandContext.ReplyToMessageId);
 
-        await _telegramBotClient.UnpinChatMessageAsync(chat, messageId);
+        await telegramBotClient.UnpinChatMessageAsync(chat, messageId);
     }
 }

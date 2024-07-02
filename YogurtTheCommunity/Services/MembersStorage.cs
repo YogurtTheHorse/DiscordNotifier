@@ -5,24 +5,13 @@ using YogurtTheCommunity.Options;
 
 namespace YogurtTheCommunity.Services;
 
-public class MembersStorage
+public class MembersStorage(
+    IConnectionMultiplexer redis,
+    ILogger<MembersStorage> logger,
+    IOptions<MembersDefaultOptions> membersDefaultOptions)
 {
-    private readonly IConnectionMultiplexer _redis;
-    private readonly ILogger<MembersStorage> _logger;
-    private readonly IOptions<MembersDefaultOptions> _membersDefaultOptions;
-
     private const string NameField = "id";
     private const string TelegramIdField = "tg-id";
-
-    public MembersStorage(
-        IConnectionMultiplexer redis,
-        ILogger<MembersStorage> logger,
-        IOptions<MembersDefaultOptions> membersDefaultOptions)
-    {
-        _redis = redis;
-        _logger = logger;
-        _membersDefaultOptions = membersDefaultOptions;
-    }
 
     public async Task<MemberInfo?> GetMemberByTelegramId(long telegramId)
     {
@@ -33,7 +22,7 @@ public class MembersStorage
 
     public async Task<MemberInfo?> GetMemberById(Guid id)
     {
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         var memberInfo = await db.HashGetAllAsync($"community:members:{id}");
         var roles = await db.SetMembersAsync($"community:members:{id}:roles");
@@ -52,7 +41,7 @@ public class MembersStorage
 
     public async Task<ExtraMemberInfo> GetExtraInfo(Guid id)
     {
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         var extraInfoEntries = await db.HashGetAllAsync($"community:members:{id}:extra");
 
@@ -71,7 +60,7 @@ public class MembersStorage
     
     public async Task SetExtraInfo(Guid id, ExtraMemberInfo extraInfo)
     {
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         await db.HashSetAsync($"community:members:{id}:extra",
             new[]
@@ -82,7 +71,7 @@ public class MembersStorage
 
     public async Task SetName(Guid id, string name)
     {
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         await db.HashSetAsync($"community:members:{id}",
             new[]
@@ -93,21 +82,21 @@ public class MembersStorage
 
     public async Task AddRole(Guid memberId, string role)
     {
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         await db.SetAddAsync($"community:members:{memberId}:roles", role);
     }
 
     public async Task RemoveRole(Guid memberId, string role)
     {
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         await db.SetRemoveAsync($"community:members:{memberId}:roles", role);
     }
 
     public async Task<long?> GetTelegramId(Guid id)
     {
-        var defaultId = _membersDefaultOptions.Value.TelegramDefaultIds.FirstOrDefault(x => x.Value.DefaultId == id)
+        var defaultId = membersDefaultOptions.Value.TelegramDefaultIds.FirstOrDefault(x => x.Value.DefaultId == id)
             .Key;
 
         if (defaultId != 0)
@@ -115,7 +104,7 @@ public class MembersStorage
             return defaultId;
         }
 
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         var tgId = await db.HashGetAsync($"community:members:{id}", TelegramIdField);
 
@@ -129,7 +118,7 @@ public class MembersStorage
             return defaultMember.DefaultId;
         }
 
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
         var fromDb = await db.StringGetAsync(GetTelegramIdKey(telegramId));
 
         if (fromDb.HasValue)
@@ -140,7 +129,7 @@ public class MembersStorage
         var newId = Guid.NewGuid();
         await db.StringSetAsync(GetTelegramIdKey(telegramId), newId.ToString());
 
-        _logger.LogInformation("Created new id for telegram id {telegramId}: {newId}", telegramId, newId);
+        logger.LogInformation("Created new id for telegram id {telegramId}: {newId}", telegramId, newId);
 
         return newId;
     }
@@ -150,9 +139,9 @@ public class MembersStorage
         var defaultMember = GetDefaultMemberFromTelegram(telegramId);
 
         var id = await GetIdFromTelegramId(telegramId);
-        var roles = defaultMember?.DefaultRoles ?? _membersDefaultOptions.Value.DefaultRoles;
+        var roles = defaultMember?.DefaultRoles ?? membersDefaultOptions.Value.DefaultRoles;
 
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         await db.HashSetAsync($"community:members:{id}",
             new[]
@@ -168,7 +157,7 @@ public class MembersStorage
 
     private bool TryGetDefaultMemberFromTelegram(long telegramId, out MembersDefaultOptions.DefaultMember defaultMember)
     {
-        var res = _membersDefaultOptions.Value.TelegramDefaultIds.TryGetValue(telegramId, out var dm);
+        var res = membersDefaultOptions.Value.TelegramDefaultIds.TryGetValue(telegramId, out var dm);
 
         defaultMember = dm ?? new MembersDefaultOptions.DefaultMember();
 

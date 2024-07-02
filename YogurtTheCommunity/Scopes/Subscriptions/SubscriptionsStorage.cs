@@ -2,25 +2,18 @@ using StackExchange.Redis;
 
 namespace YogurtTheCommunity.Subscriptions;
 
-public class SubscriptionsStorage
+public class SubscriptionsStorage(IConnectionMultiplexer redis)
 {
-    private readonly IConnectionMultiplexer _redis;
-
-    public SubscriptionsStorage(IConnectionMultiplexer redis)
-    {
-        _redis = redis;
-    }
-
     public async Task<string[]> GetSubscriptions()
     {
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         return (await db.SetMembersAsync("community:subscriptions")).Select(c => (string)c!).ToArray();
     }
 
     public async Task<bool> Subscribe(Guid id, string subscription)
     {
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         await db.SetAddAsync("community:subscriptions", subscription);
 
@@ -29,14 +22,14 @@ public class SubscriptionsStorage
 
     public async Task Unsubscribe(Guid id, string subscription)
     {
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         await db.SetRemoveAsync($"community:subscriptions:{subscription}", id.ToString());
     }
 
     public async Task<Guid[]> GetSubscribers(string subscription)
     {
-        var db = _redis.GetDatabase();
+        var db = redis.GetDatabase();
 
         return (await db.SetMembersAsync($"community:subscriptions:{subscription}"))
             .Select(c => Guid.Parse(c!))
