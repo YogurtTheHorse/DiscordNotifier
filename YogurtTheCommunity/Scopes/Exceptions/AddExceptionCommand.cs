@@ -25,6 +25,6 @@ public class AddExceptionCommand(ExceptionsStorage exceptions) : ICommandListene
         var chatId = long.Parse(commandContext.ChatId);
 
         await exceptions.AddExceptionForTelegramChat(exceptionName, chatId);
-        await commandContext.Reply("Added exception 'exceptionName' to chat");
+        await commandContext.Reply($"Added exception '{exceptionName}' to chat");
     }
 }

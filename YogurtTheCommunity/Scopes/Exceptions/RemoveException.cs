@@ -24,6 +24,6 @@ public class RemoveException(ExceptionsStorage exceptions) : ICommandListener
         var chatId = long.Parse(commandContext.ChatId);
 
         await exceptions.RemoveExceptionFromTelegramChat(exceptionName, chatId);
-        await commandContext.Reply("Removed exception 'exceptionName' to chat");
+        await commandContext.Reply($"Removed exception '{exceptionName}' to chat");
     }
 }
