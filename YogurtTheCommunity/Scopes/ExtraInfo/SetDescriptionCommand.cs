@@ -10,9 +10,9 @@ public class SetDescriptionCommand(MembersStorage members) : ICommandListener
     public string Description => "sets member description";
 
     public string[] RequiredPermissions { get; } =
-    {
+    [
         "base.info.edit-own"
-    };
+    ];
 
     public IList<CommandArgument> Arguments { get; } = new[]
     {

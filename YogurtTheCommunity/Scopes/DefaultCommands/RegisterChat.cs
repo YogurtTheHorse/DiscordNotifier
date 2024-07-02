@@ -12,9 +12,10 @@ public class RegisterChat(ITelegramBotClient telegramBotClient, ChatsRegistry ch
 
     public IList<CommandArgument> Arguments => Array.Empty<CommandArgument>();
 
-    public string[] RequiredPermissions { get; } = {
+    public string[] RequiredPermissions { get; } =
+    [
         "chats.edit"
-    };
+    ];
 
     public async Task Execute(CommandContext commandContext)
     {

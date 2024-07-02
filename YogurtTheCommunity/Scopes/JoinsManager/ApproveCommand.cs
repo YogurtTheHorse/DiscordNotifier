@@ -12,9 +12,10 @@ public class ApproveCommand(JoinsStorage joinsStorage, MembersStorage membersSto
 
     public string Description => "approves join request";
 
-    public string[] RequiredPermissions { get; } = {
+    public string[] RequiredPermissions { get; } =
+    [
         "joins.manager"
-    };
+    ];
 
     public IList<CommandArgument> Arguments { get; } = new[] {
         new CommandArgument("memberId")

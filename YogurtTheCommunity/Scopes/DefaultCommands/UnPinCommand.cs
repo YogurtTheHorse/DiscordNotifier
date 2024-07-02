@@ -8,9 +8,10 @@ public class UnPinCommand(ITelegramBotClient telegramBotClient) : ICommandListen
 
     public string Description => "unpins message";
 
-    public string[] RequiredPermissions { get; } = {
+    public string[] RequiredPermissions { get; } =
+    [
         "messages.unpin"
-    };
+    ];
 
     public IList<CommandArgument> Arguments => Array.Empty<CommandArgument>();
 

@@ -63,10 +63,9 @@ public class MembersStorage(
         var db = redis.GetDatabase();
 
         await db.HashSetAsync($"community:members:{id}:extra",
-            new[]
-            {
-                new HashEntry(nameof(ExtraMemberInfo.Description), extraInfo.Description)
-            });
+        [
+            new HashEntry(nameof(ExtraMemberInfo.Description), extraInfo.Description)
+        ]);
     }
 
     public async Task SetName(Guid id, string name)
@@ -74,10 +73,9 @@ public class MembersStorage(
         var db = redis.GetDatabase();
 
         await db.HashSetAsync($"community:members:{id}",
-            new[]
-            {
-                new HashEntry(NameField, name)
-            });
+        [
+            new HashEntry(NameField, name)
+        ]);
     }
 
     public async Task AddRole(Guid memberId, string role)
@@ -144,10 +142,9 @@ public class MembersStorage(
         var db = redis.GetDatabase();
 
         await db.HashSetAsync($"community:members:{id}",
-            new[]
-            {
-                new HashEntry(NameField, name), new HashEntry(TelegramIdField, telegramId)
-            });
+        [
+            new HashEntry(NameField, name), new HashEntry(TelegramIdField, telegramId)
+        ]);
         await db.SetAddAsync($"community:members:{id}:roles", roles.Select(r => (RedisValue)r).ToArray());
 
         return new MemberInfo(id, name, roles);

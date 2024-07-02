@@ -9,9 +9,10 @@ public class PinCommand(ITelegramBotClient telegramBotClient) : ICommandListener
 
     public string Description => "pins message";
 
-    public string[] RequiredPermissions { get; } = {
+    public string[] RequiredPermissions { get; } =
+    [
         "messages.pin"
-    };
+    ];
 
     public IList<CommandArgument> Arguments { get; } = new[] {
         new CommandArgument("notify", "false")

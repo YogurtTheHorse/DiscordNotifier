@@ -27,10 +27,11 @@ public class TelegramListenerWorker(
             OnUpdate,
             OnPollingError,
             new ReceiverOptions {
-                AllowedUpdates = new[] {
+                AllowedUpdates =
+                [
                     UpdateType.Message, UpdateType.ChatMember, UpdateType.CallbackQuery, UpdateType.ChannelPost,
                     UpdateType.ChatJoinRequest
-                }
+                ]
             },
             cancellationToken: stoppingToken
         );

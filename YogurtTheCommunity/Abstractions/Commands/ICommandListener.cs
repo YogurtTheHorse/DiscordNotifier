@@ -6,7 +6,7 @@ public interface ICommandListener
     
     string Description { get; }
     
-    string[] RequiredPermissions => Array.Empty<string>();
+    string[] RequiredPermissions => [];
     
     IList<CommandArgument> Arguments { get; }
 

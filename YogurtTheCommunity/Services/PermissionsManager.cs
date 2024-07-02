@@ -9,7 +9,7 @@ public class PermissionsManager(IOptions<PermissionsOptions> permissionsOptions)
     public string[] GetRolePermissions(string role) =>
         permissionsOptions.Value.RolesPermissions.TryGetValue(role, out var permissions)
             ? permissions
-            : Array.Empty<string>();
+            : [];
 
     public bool HasPermissions(MemberInfo memberInfo, params string[] permissions) =>
         permissions.All(permission =>

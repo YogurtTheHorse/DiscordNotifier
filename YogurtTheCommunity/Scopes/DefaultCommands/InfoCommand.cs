@@ -9,9 +9,10 @@ public class InfoCommand(IEnumerable<IInfoProvider> infoProviders) : ICommandLis
 
     public string Description => "sends info about user";
 
-    public string[] RequiredPermissions { get; } = {
+    public string[] RequiredPermissions { get; } =
+    [
         "base.info.read"
-    };
+    ];
 
     public IList<CommandArgument> Arguments => Array.Empty<CommandArgument>();
 

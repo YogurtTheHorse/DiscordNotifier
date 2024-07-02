@@ -12,9 +12,10 @@ public class RemoveRoleCommand(MembersStorage members) : ICommandListener
         new CommandArgument("role", string.Empty)
     };
     
-    public string[] RequiredPermissions { get; } = {
+    public string[] RequiredPermissions { get; } =
+    [
         "roles.edit"
-    };
+    ];
 
     public async Task Execute(CommandContext commandContext)
     {

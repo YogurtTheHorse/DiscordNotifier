@@ -8,9 +8,10 @@ public class SetTitleCommand(TitlesStorage titlesStorage, TitlesManager titlesMa
 
     public string Description => "Sets chat title of user";
 
-    public string[] RequiredPermissions { get; } = {
+    public string[] RequiredPermissions { get; } =
+    [
         "titles.edit"
-    };
+    ];
 
     public IList<CommandArgument> Arguments { get; } = new[] {
         new CommandArgument("title", string.Empty, ArgumentType.Filler)
