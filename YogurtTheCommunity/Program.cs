@@ -12,6 +12,7 @@ using YogurtTheCommunity.Commands.DefaultCommands;
 using YogurtTheCommunity.DiscordNotifier.Services;
 using YogurtTheCommunity.DiscordNotifier.Workers;
 using YogurtTheCommunity.JoinsManager;
+using YogurtTheCommunity.Scopes.Exceptions;
 using YogurtTheCommunity.Scopes.ExtraInfo;
 using YogurtTheCommunity.Services;
 using YogurtTheCommunity.Subscriptions;
@@ -48,6 +49,15 @@ builder.Services.AddSingleton<CommandExecutor>();
 
 builder.Services.AddSingleton<ICommandListener, SetDescriptionCommand>();
 builder.Services.AddSingleton<IInfoProvider, ExtraInfoProvider>();
+
+#endregion
+
+#region Exceptions
+
+builder.Services.AddSingleton<ICommandListener, AddExceptionCommand>();
+builder.Services.AddSingleton<ICommandListener, RemoveException>();
+builder.Services.AddSingleton<ICommandListener, ListExceptionsCommand>();
+builder.Services.AddSingleton<ExceptionsStorage>();
 
 #endregion
 
