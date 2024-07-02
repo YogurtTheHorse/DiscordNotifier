@@ -6,9 +6,9 @@ public class DiscordNotifierOptions
 
     public string Token { get; set; } = null!;
 
-    public float WaitBetweenJoins { get; set; } = 0;
+    public float WaitBetweenJoins { get; set; }
 
-    public float WaitBetweenStreaming { get; set; } = 0;
+    public float WaitBetweenStreaming { get; set; }
 
     public float WaitBeforeStatusDelete { get; set; } = 60;
     

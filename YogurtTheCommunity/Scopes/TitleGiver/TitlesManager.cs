@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
+using YogurtTheCommunity.Scopes.Exceptions;
 using YogurtTheCommunity.Services;
 
 namespace YogurtTheCommunity.TitleGiver;
@@ -8,6 +9,7 @@ public class TitlesManager(
     ITelegramBotClient telegramBotClient,
     ILogger<TitlesManager> logger,
     MembersStorage membersStorage,
+    ExceptionsStorage exceptionsStorage,
     ChatsRegistry chatsRegistry)
 {
     public async Task<bool> UpdateTitle(Guid memberId, string title)
@@ -33,6 +35,11 @@ public class TitlesManager(
 
     public async Task UpdateTitleInChat(Guid memberId, string title, long chat, long tgId)
     {
+        if (await exceptionsStorage.HasException(chat, "titles"))
+        {
+            return;
+        }
+        
         var admins = await telegramBotClient.GetChatAdministratorsAsync(chat);
 
         if (admins.All(x => x.User.Id != tgId))

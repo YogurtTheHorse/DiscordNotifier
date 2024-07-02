@@ -143,6 +143,4 @@ public class ChannelsStateManager(
 
         return res;
     }
-
-    private string GetDeleteMessageJobName(SocketVoiceChannel channel) => $"delete-message-{channel.Id}";
 }
