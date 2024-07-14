@@ -1,0 +1,9 @@
+﻿services:
+  yogurtthecommunity:
+    image: yogurtthecommunity
+    build:
+      context: .
+      dockerfile: YogurtTheCommunity/Dockerfile
+
+  redis:
+    image: "redis:alpine"
