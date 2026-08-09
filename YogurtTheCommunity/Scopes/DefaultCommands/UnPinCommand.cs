@@ -26,6 +26,6 @@ public class UnPinCommand(ITelegramBotClient telegramBotClient) : ICommandListen
         var chat = long.Parse(commandContext.ChatId);
         var messageId = int.Parse(commandContext.ReplyToMessageId);
 
-        await telegramBotClient.UnpinChatMessageAsync(chat, messageId);
+        await telegramBotClient.UnpinChatMessage(chat, messageId);
     }
 }

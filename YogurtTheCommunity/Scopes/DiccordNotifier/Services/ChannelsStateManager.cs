@@ -15,6 +15,10 @@ public class ChannelsStateManager(
 {
     private long ChatId => notifierOptions.Value.TelegramTargetId;
 
+    private int? ThreadId => notifierOptions.Value.TelegramThreadId;
+
+    private bool NeedToPinMessage => notifierOptions.Value.NeedToPinMessage;
+
     public async Task UpdateChannelInfo(SocketVoiceChannel voiceChannel)
     {
         var channelId = voiceChannel.Id;
@@ -39,7 +43,7 @@ public class ChannelsStateManager(
         {
             try
             {
-                await botClient.EditMessageTextAsync(ChatId, messageId.Value, stateMessage, parseMode: ParseMode.Html);
+                await botClient.EditMessageText(ChatId, messageId.Value, stateMessage, parseMode: ParseMode.Html);
             }
             catch (ApiRequestException ex) // we weren't able to edit, so send another one
             {
@@ -69,10 +73,14 @@ public class ChannelsStateManager(
 
         async Task SendMessage()
         {
-            var message = await botClient.SendTextMessageAsync(ChatId, stateMessage, parseMode: ParseMode.Html);
+            var message = await botClient.SendMessage(ChatId, stateMessage, parseMode: ParseMode.Html,
+                messageThreadId: ThreadId);
 
             await messagesDataStorage.SetChannelStateMessage(channelId, message.MessageId);
-            await botClient.PinChatMessageAsync(ChatId, message.MessageId);
+            if (NeedToPinMessage)
+            {
+                await botClient.PinChatMessage(ChatId, message.MessageId);
+            }
         }
     }
 
@@ -84,7 +92,7 @@ public class ChannelsStateManager(
 
         try
         {
-            await botClient.DeleteMessageAsync(ChatId, messageId.Value);
+            await botClient.DeleteMessage(ChatId, messageId.Value);
             await messagesDataStorage.SetChannelStateMessage(channelId, null);
         }
         catch

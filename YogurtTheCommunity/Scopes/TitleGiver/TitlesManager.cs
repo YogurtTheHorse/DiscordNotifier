@@ -40,13 +40,13 @@ public class TitlesManager(
             return;
         }
         
-        var admins = await telegramBotClient.GetChatAdministratorsAsync(chat);
+        var admins = await telegramBotClient.GetChatAdministrators(chat);
 
         if (admins.All(x => x.User.Id != tgId))
         {
             try
             {
-                await telegramBotClient.PromoteChatMemberAsync(
+                await telegramBotClient.PromoteChatMember(
                     chat,
                     tgId,
                     canManageChat: true
@@ -61,7 +61,7 @@ public class TitlesManager(
 
         try
         {
-            await telegramBotClient.SetChatAdministratorCustomTitleAsync(chat, tgId, title);
+            await telegramBotClient.SetChatAdministratorCustomTitle(chat, tgId, title);
         }
         catch (ApiRequestException ex)
         {

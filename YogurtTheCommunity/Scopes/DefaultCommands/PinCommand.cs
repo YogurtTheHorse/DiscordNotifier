@@ -30,6 +30,6 @@ public class PinCommand(ITelegramBotClient telegramBotClient) : ICommandListener
         var messageId = int.Parse(commandContext.ReplyToMessageId);
         var notify = commandContext.GetArgument(Arguments[0]).AsBool() ?? false;
 
-        await telegramBotClient.PinChatMessageAsync(chat, messageId, notify);
+        await telegramBotClient.PinChatMessage(chat, messageId, notify);
     }
 }

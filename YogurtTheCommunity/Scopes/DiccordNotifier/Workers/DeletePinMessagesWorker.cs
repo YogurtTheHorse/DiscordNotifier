@@ -14,7 +14,7 @@ public class DeletePinMessagesWorker(IOptions<DiscordNotifierOptions> notifierOp
 
         try
         {
-            await client.DeleteMessageAsync(chatId, messageId, cts);
+            await client.DeleteMessage(chatId, messageId, cts);
         }
         catch
         {

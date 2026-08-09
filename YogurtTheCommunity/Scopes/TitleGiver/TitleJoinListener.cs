@@ -23,6 +23,6 @@ public class TitleJoinListener(TitlesStorage titlesStorage, MembersStorage membe
         if (title is null) return;
 
         await titlesManager.UpdateTitleInChat(member.Id, title, chat.Id, newChatMember.Id);
-        await client.SendTextMessageAsync(chat, "Automatically setting title...", cancellationToken: cts);
+        await client.SendMessage(chat, "Automatically setting title...", cancellationToken: cts);
     }
 }

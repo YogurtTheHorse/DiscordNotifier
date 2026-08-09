@@ -22,7 +22,7 @@ public class RegisterChat(ITelegramBotClient telegramBotClient, ChatsRegistry ch
         // todo: fix telegram-only code
         var chat = long.Parse(commandContext.ChatId);
 
-        var admins = await telegramBotClient.GetChatAdministratorsAsync(chat);
+        var admins = await telegramBotClient.GetChatAdministrators(chat);
 
         if (admins.All(a => a.User.Id != telegramBotClient.BotId))
         {

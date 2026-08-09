@@ -22,7 +22,7 @@ public class JoinListener(JoinsStorage joinsStorage, MembersStorage membersStora
         }
 
         await joinsStorage.AddJoinRequest(member.Id, chat.Id);
-        await client.SendTextMessageAsync(
+        await client.SendMessage(
             chat.Id,
             $"""
             A-hoy! Someone is trying to join chat!

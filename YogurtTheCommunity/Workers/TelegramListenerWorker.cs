@@ -43,7 +43,7 @@ public class TelegramListenerWorker(
             })
             .ToArray();
 
-        await botClient.SetMyCommandsAsync(
+        await botClient.SetMyCommands(
             commands,
             cancellationToken: stoppingToken
         );
@@ -138,7 +138,7 @@ public class TelegramListenerWorker(
 
             if (!string.IsNullOrEmpty(result))
             {
-                await botClient.SendTextMessageAsync(
+                await botClient.SendMessage(
                     message.Chat.Id,
                     result,
                     parseMode: ParseMode.Html
